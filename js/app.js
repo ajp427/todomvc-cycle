@@ -306,10 +306,10 @@ module.exports = {
   makeDestroy: makeDestroy
 };
 
-},{"./render-dom":6,"rx":63}],4:[function(require,module,exports){
+},{"./render-dom":6,"rx":9}],4:[function(require,module,exports){
 'use strict';
 var CustomElementWidget = require('./custom-element-widget');
-var Map = Map || require('es6-map'); // eslint-disable-line no-native-reassign
+require('es6-collections'); // eslint-disable-line no-native-reassign
 var CustomElementsRegistry = new Map();
 
 function replaceCustomElementsWithSomething(vtree, toSomethingFn) {
@@ -359,7 +359,7 @@ module.exports = {
   unregisterAllCustomElements: unregisterAllCustomElements
 };
 
-},{"./custom-element-widget":3,"es6-map":8}],5:[function(require,module,exports){
+},{"./custom-element-widget":3,"es6-collections":8}],5:[function(require,module,exports){
 'use strict';
 var VirtualDOM = require('virtual-dom');
 var Rx = require('rx');
@@ -444,7 +444,7 @@ var Cycle = {
 
 module.exports = Cycle;
 
-},{"./custom-elements":4,"./render-dom":6,"./render-html":7,"rx":63,"virtual-dom":79}],6:[function(require,module,exports){
+},{"./custom-elements":4,"./render-dom":6,"./render-html":7,"rx":9,"virtual-dom":25}],6:[function(require,module,exports){
 /* jshint maxparams: 4 */
 'use strict';
 
@@ -700,7 +700,7 @@ module.exports = {
   applyToDOM: applyToDOM
 };
 
-},{"./custom-elements":4,"rx":63,"virtual-dom":79,"virtual-dom/diff":77,"virtual-dom/patch":87}],7:[function(require,module,exports){
+},{"./custom-elements":4,"rx":9,"virtual-dom":25,"virtual-dom/diff":23,"virtual-dom/patch":33}],7:[function(require,module,exports){
 'use strict';
 var Rx = require('rx');
 var toHTML = require('vdom-to-html');
@@ -787,1414 +787,240 @@ module.exports = {
   renderAsHTML: renderAsHTML
 };
 
-},{"./custom-elements":4,"rx":63,"vdom-to-html":65}],8:[function(require,module,exports){
+},{"./custom-elements":4,"rx":9,"vdom-to-html":11}],8:[function(require,module,exports){
+(function (global){
 'use strict';
 
-module.exports = require('./is-implemented')() ? Map : require('./polyfill');
-
-},{"./is-implemented":9,"./polyfill":62}],9:[function(require,module,exports){
-'use strict';
-
-module.exports = function () {
-	var map, iterator, result;
-	if (typeof Map !== 'function') return false;
-	try {
-		// WebKit doesn't support arguments and crashes
-		map = new Map([['raz', 'one'], ['dwa', 'two'], ['trzy', 'three']]);
-	} catch (e) {
-		return false;
-	}
-	if (map.size !== 3) return false;
-	if (typeof map.clear !== 'function') return false;
-	if (typeof map['delete'] !== 'function') return false;
-	if (typeof map.entries !== 'function') return false;
-	if (typeof map.forEach !== 'function') return false;
-	if (typeof map.get !== 'function') return false;
-	if (typeof map.has !== 'function') return false;
-	if (typeof map.keys !== 'function') return false;
-	if (typeof map.set !== 'function') return false;
-	if (typeof map.values !== 'function') return false;
-
-	iterator = map.entries();
-	result = iterator.next();
-	if (result.done !== false) return false;
-	if (!result.value) return false;
-	if (result.value[0] !== 'raz') return false;
-	if (result.value[1] !== 'one') return false;
-	return true;
-};
-
-},{}],10:[function(require,module,exports){
-// Exports true if environment provides native `Map` implementation,
-// whatever that is.
-
-'use strict';
-
-module.exports = (function () {
-	if (typeof Map === 'undefined') return false;
-	return Object.prototype.toString.call(Map.prototype) === '[object Map]';
-})();
-
-},{}],11:[function(require,module,exports){
-'use strict';
-
-module.exports = require('es5-ext/object/primitive-set')('key', 'value', 'key+value');
-
-},{"es5-ext/object/primitive-set":36}],12:[function(require,module,exports){
-'use strict';
-
-var setPrototypeOf = require('es5-ext/object/set-prototype-of'),
-    d = require('d'),
-    Iterator = require('es6-iterator'),
-    toStringTagSymbol = require('es6-symbol').toStringTag,
-    kinds = require('./iterator-kinds'),
-    defineProperties = Object.defineProperties,
-    unBind = Iterator.prototype._unBind,
-    MapIterator;
-
-MapIterator = module.exports = function (map, kind) {
-	if (!(this instanceof MapIterator)) return new MapIterator(map, kind);
-	Iterator.call(this, map.__mapKeysData__, map);
-	if (!kind || !kinds[kind]) kind = 'key+value';
-	defineProperties(this, {
-		__kind__: d('', kind),
-		__values__: d('w', map.__mapValuesData__)
-	});
-};
-if (setPrototypeOf) setPrototypeOf(MapIterator, Iterator);
-
-MapIterator.prototype = Object.create(Iterator.prototype, {
-	constructor: d(MapIterator),
-	_resolve: d(function (i) {
-		if (this.__kind__ === 'value') return this.__values__[i];
-		if (this.__kind__ === 'key') return this.__list__[i];
-		return [this.__list__[i], this.__values__[i]];
-	}),
-	_unBind: d(function () {
-		this.__values__ = null;
-		unBind.call(this);
-	}),
-	toString: d(function () {
-		return '[object Map Iterator]';
-	})
-});
-Object.defineProperty(MapIterator.prototype, toStringTagSymbol, d('c', 'Map Iterator'));
-
-},{"./iterator-kinds":11,"d":14,"es5-ext/object/set-prototype-of":37,"es6-iterator":49,"es6-symbol":58}],13:[function(require,module,exports){
-'use strict';
-
-var copy = require('es5-ext/object/copy'),
-    map = require('es5-ext/object/map'),
-    callable = require('es5-ext/object/valid-callable'),
-    validValue = require('es5-ext/object/valid-value'),
-    bind = Function.prototype.bind,
-    defineProperty = Object.defineProperty,
-    hasOwnProperty = Object.prototype.hasOwnProperty,
-    define;
-
-define = function (name, desc, bindTo) {
-	var value = validValue(desc) && callable(desc.value),
-	    dgs;
-	dgs = copy(desc);
-	delete dgs.writable;
-	delete dgs.value;
-	dgs.get = function () {
-		if (hasOwnProperty.call(this, name)) return value;
-		desc.value = bind.call(value, bindTo == null ? this : this[bindTo]);
-		defineProperty(this, name, desc);
-		return this[name];
-	};
-	return dgs;
-};
-
-module.exports = function (props /*, bindTo*/) {
-	var bindTo = arguments[1];
-	return map(props, function (desc, name) {
-		return define(name, desc, bindTo);
-	});
-};
-
-},{"es5-ext/object/copy":26,"es5-ext/object/map":34,"es5-ext/object/valid-callable":40,"es5-ext/object/valid-value":41}],14:[function(require,module,exports){
-'use strict';
-
-var assign = require('es5-ext/object/assign'),
-    normalizeOpts = require('es5-ext/object/normalize-options'),
-    isCallable = require('es5-ext/object/is-callable'),
-    contains = require('es5-ext/string/#/contains'),
-    d;
-
-d = module.exports = function (dscr, value /*, options*/) {
-	var c, e, w, options, desc;
-	if (arguments.length < 2 || typeof dscr !== 'string') {
-		options = value;
-		value = dscr;
-		dscr = null;
-	} else {
-		options = arguments[2];
-	}
-	if (dscr == null) {
-		c = w = true;
-		e = false;
-	} else {
-		c = contains.call(dscr, 'c');
-		e = contains.call(dscr, 'e');
-		w = contains.call(dscr, 'w');
-	}
-
-	desc = { value: value, configurable: c, enumerable: e, writable: w };
-	return !options ? desc : assign(normalizeOpts(options), desc);
-};
-
-d.gs = function (dscr, get, set /*, options*/) {
-	var c, e, options, desc;
-	if (typeof dscr !== 'string') {
-		options = set;
-		set = get;
-		get = dscr;
-		dscr = null;
-	} else {
-		options = arguments[3];
-	}
-	if (get == null) {
-		get = undefined;
-	} else if (!isCallable(get)) {
-		options = get;
-		get = set = undefined;
-	} else if (set == null) {
-		set = undefined;
-	} else if (!isCallable(set)) {
-		options = set;
-		set = undefined;
-	}
-	if (dscr == null) {
-		c = true;
-		e = false;
-	} else {
-		c = contains.call(dscr, 'c');
-		e = contains.call(dscr, 'e');
-	}
-
-	desc = { get: get, set: set, configurable: c, enumerable: e };
-	return !options ? desc : assign(normalizeOpts(options), desc);
-};
-
-},{"es5-ext/object/assign":23,"es5-ext/object/is-callable":29,"es5-ext/object/normalize-options":35,"es5-ext/string/#/contains":42}],15:[function(require,module,exports){
-// Inspired by Google Closure:
-// http://closure-library.googlecode.com/svn/docs/
-// closure_goog_array_array.js.html#goog.array.clear
-
-'use strict';
-
-var value = require('../../object/valid-value');
-
-module.exports = function () {
-	value(this).length = 0;
-	return this;
-};
-
-},{"../../object/valid-value":41}],16:[function(require,module,exports){
-'use strict';
-
-var toPosInt = require('../../number/to-pos-integer'),
-    value = require('../../object/valid-value'),
-    indexOf = Array.prototype.indexOf,
-    hasOwnProperty = Object.prototype.hasOwnProperty,
-    abs = Math.abs,
-    floor = Math.floor;
-
-module.exports = function (searchElement /*, fromIndex*/) {
-	var i, l, fromIndex, val;
-	if (searchElement === searchElement) {
-		//jslint: ignore
-		return indexOf.apply(this, arguments);
-	}
-
-	l = toPosInt(value(this).length);
-	fromIndex = arguments[1];
-	if (isNaN(fromIndex)) fromIndex = 0;else if (fromIndex >= 0) fromIndex = floor(fromIndex);else fromIndex = toPosInt(this.length) - floor(abs(fromIndex));
-
-	for (i = fromIndex; i < l; ++i) {
-		if (hasOwnProperty.call(this, i)) {
-			val = this[i];
-			if (val !== val) return i; //jslint: ignore
-		}
-	}
-	return -1;
-};
-
-},{"../../number/to-pos-integer":21,"../../object/valid-value":41}],17:[function(require,module,exports){
-'use strict';
-
-module.exports = require('./is-implemented')() ? Math.sign : require('./shim');
-
-},{"./is-implemented":18,"./shim":19}],18:[function(require,module,exports){
-'use strict';
-
-module.exports = function () {
-	var sign = Math.sign;
-	if (typeof sign !== 'function') return false;
-	return sign(10) === 1 && sign(-20) === -1;
-};
-
-},{}],19:[function(require,module,exports){
-'use strict';
-
-module.exports = function (value) {
-	value = Number(value);
-	if (isNaN(value) || value === 0) return value;
-	return value > 0 ? 1 : -1;
-};
-
-},{}],20:[function(require,module,exports){
-'use strict';
-
-var sign = require('../math/sign'),
-    abs = Math.abs,
-    floor = Math.floor;
-
-module.exports = function (value) {
-	if (isNaN(value)) return 0;
-	value = Number(value);
-	if (value === 0 || !isFinite(value)) return value;
-	return sign(value) * floor(abs(value));
-};
-
-},{"../math/sign":17}],21:[function(require,module,exports){
-'use strict';
-
-var toInteger = require('./to-integer'),
-    max = Math.max;
-
-module.exports = function (value) {
-  return max(0, toInteger(value));
-};
-
-},{"./to-integer":20}],22:[function(require,module,exports){
-// Internal method, used by iteration functions.
-// Calls a function for each key-value pair found in object
-// Optionally takes compareFn to iterate object in specific order
-
-'use strict';
-
-var isCallable = require('./is-callable'),
-    callable = require('./valid-callable'),
-    value = require('./valid-value'),
-    call = Function.prototype.call,
-    keys = Object.keys,
-    propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
-
-module.exports = function (method, defVal) {
-	return function (obj, cb /*, thisArg, compareFn*/) {
-		var list,
-		    thisArg = arguments[2],
-		    compareFn = arguments[3];
-		obj = Object(value(obj));
-		callable(cb);
-
-		list = keys(obj);
-		if (compareFn) {
-			list.sort(isCallable(compareFn) ? compareFn.bind(obj) : undefined);
-		}
-		return list[method](function (key, index) {
-			if (!propertyIsEnumerable.call(obj, key)) return defVal;
-			return call.call(cb, thisArg, obj[key], key, obj, index);
-		});
-	};
-};
-
-},{"./is-callable":29,"./valid-callable":40,"./valid-value":41}],23:[function(require,module,exports){
-'use strict';
-
-module.exports = require('./is-implemented')() ? Object.assign : require('./shim');
-
-},{"./is-implemented":24,"./shim":25}],24:[function(require,module,exports){
-'use strict';
-
-module.exports = function () {
-	var assign = Object.assign,
-	    obj;
-	if (typeof assign !== 'function') return false;
-	obj = { foo: 'raz' };
-	assign(obj, { bar: 'dwa' }, { trzy: 'trzy' });
-	return obj.foo + obj.bar + obj.trzy === 'razdwatrzy';
-};
-
-},{}],25:[function(require,module,exports){
-'use strict';
-
-var keys = require('../keys'),
-    value = require('../valid-value'),
-    max = Math.max;
-
-module.exports = function (dest, src /*, …srcn*/) {
-	var error,
-	    i,
-	    l = max(arguments.length, 2),
-	    assign;
-	dest = Object(value(dest));
-	assign = function (key) {
-		try {
-			dest[key] = src[key];
-		} catch (e) {
-			if (!error) error = e;
-		}
-	};
-	for (i = 1; i < l; ++i) {
-		src = arguments[i];
-		keys(src).forEach(assign);
-	}
-	if (error !== undefined) throw error;
-	return dest;
-};
-
-},{"../keys":31,"../valid-value":41}],26:[function(require,module,exports){
-'use strict';
-
-var assign = require('./assign'),
-    value = require('./valid-value');
-
-module.exports = function (obj) {
-	var copy = Object(value(obj));
-	if (copy !== obj) return copy;
-	return assign({}, obj);
-};
-
-},{"./assign":23,"./valid-value":41}],27:[function(require,module,exports){
-// Workaround for http://code.google.com/p/v8/issues/detail?id=2804
-
-'use strict';
-
-var create = Object.create,
-    shim;
-
-if (!require('./set-prototype-of/is-implemented')()) {
-	shim = require('./set-prototype-of/shim');
-}
-
-module.exports = (function () {
-	var nullObject, props, desc;
-	if (!shim) return create;
-	if (shim.level !== 1) return create;
-
-	nullObject = {};
-	props = {};
-	desc = { configurable: false, enumerable: false, writable: true,
-		value: undefined };
-	Object.getOwnPropertyNames(Object.prototype).forEach(function (name) {
-		if (name === '__proto__') {
-			props[name] = { configurable: true, enumerable: false, writable: true,
-				value: undefined };
-			return;
-		}
-		props[name] = desc;
-	});
-	Object.defineProperties(nullObject, props);
-
-	Object.defineProperty(shim, 'nullPolyfill', { configurable: false,
-		enumerable: false, writable: false, value: nullObject });
-
-	return function (prototype, props) {
-		return create(prototype === null ? nullObject : prototype, props);
-	};
-})();
-
-},{"./set-prototype-of/is-implemented":38,"./set-prototype-of/shim":39}],28:[function(require,module,exports){
-'use strict';
-
-module.exports = require('./_iterate')('forEach');
-
-},{"./_iterate":22}],29:[function(require,module,exports){
-// Deprecated
-
-'use strict';
-
-module.exports = function (obj) {
-  return typeof obj === 'function';
-};
-
-},{}],30:[function(require,module,exports){
-'use strict';
-
-var map = { 'function': true, object: true };
-
-module.exports = function (x) {
-	return x != null && map[typeof x] || false;
-};
-
-},{}],31:[function(require,module,exports){
-'use strict';
-
-module.exports = require('./is-implemented')() ? Object.keys : require('./shim');
-
-},{"./is-implemented":32,"./shim":33}],32:[function(require,module,exports){
-'use strict';
-
-module.exports = function () {
-	try {
-		Object.keys('primitive');
-		return true;
-	} catch (e) {
-		return false;
-	}
-};
-
-},{}],33:[function(require,module,exports){
-'use strict';
-
-var keys = Object.keys;
-
-module.exports = function (object) {
-	return keys(object == null ? object : Object(object));
-};
-
-},{}],34:[function(require,module,exports){
-'use strict';
-
-var callable = require('./valid-callable'),
-    forEach = require('./for-each'),
-    call = Function.prototype.call;
-
-module.exports = function (obj, cb /*, thisArg*/) {
-	var o = {},
-	    thisArg = arguments[2];
-	callable(cb);
-	forEach(obj, function (value, key, obj, index) {
-		o[key] = call.call(cb, thisArg, value, key, obj, index);
-	});
-	return o;
-};
-
-},{"./for-each":28,"./valid-callable":40}],35:[function(require,module,exports){
-'use strict';
-
-var forEach = Array.prototype.forEach,
-    create = Object.create;
-
-var process = function process(src, obj) {
-	var key;
-	for (key in src) obj[key] = src[key];
-};
-
-module.exports = function (options /*, …options*/) {
-	var result = create(null);
-	forEach.call(arguments, function (options) {
-		if (options == null) return;
-		process(Object(options), result);
-	});
-	return result;
-};
-
-},{}],36:[function(require,module,exports){
-'use strict';
-
-var forEach = Array.prototype.forEach,
-    create = Object.create;
-
-module.exports = function (arg /*, …args*/) {
-	var set = create(null);
-	forEach.call(arguments, function (name) {
-		set[name] = true;
-	});
-	return set;
-};
-
-},{}],37:[function(require,module,exports){
-'use strict';
-
-module.exports = require('./is-implemented')() ? Object.setPrototypeOf : require('./shim');
-
-},{"./is-implemented":38,"./shim":39}],38:[function(require,module,exports){
-'use strict';
-
-var create = Object.create,
-    getPrototypeOf = Object.getPrototypeOf,
-    x = {};
-
-module.exports = function () {
-	var setPrototypeOf = Object.setPrototypeOf,
-	    customCreate = arguments[0] || create;
-	if (typeof setPrototypeOf !== 'function') return false;
-	return getPrototypeOf(setPrototypeOf(customCreate(null), x)) === x;
-};
-/*customCreate*/
-
-},{}],39:[function(require,module,exports){
-// Big thanks to @WebReflection for sorting this out
-// https://gist.github.com/WebReflection/5593554
-
-'use strict';
-
-var isObject = require('../is-object'),
-    value = require('../valid-value'),
-    isPrototypeOf = Object.prototype.isPrototypeOf,
-    defineProperty = Object.defineProperty,
-    nullDesc = { configurable: true, enumerable: false, writable: true,
-	value: undefined },
-    validate;
-
-validate = function (obj, prototype) {
-	value(obj);
-	if (prototype === null || isObject(prototype)) return obj;
-	throw new TypeError('Prototype must be null or an object');
-};
-
-module.exports = (function (status) {
-	var fn, set;
-	if (!status) return null;
-	if (status.level === 2) {
-		if (status.set) {
-			set = status.set;
-			fn = function (obj, prototype) {
-				set.call(validate(obj, prototype), prototype);
-				return obj;
-			};
-		} else {
-			fn = function (obj, prototype) {
-				validate(obj, prototype).__proto__ = prototype;
-				return obj;
-			};
-		}
-	} else {
-		fn = function self(obj, prototype) {
-			var isNullBase;
-			validate(obj, prototype);
-			isNullBase = isPrototypeOf.call(self.nullPolyfill, obj);
-			if (isNullBase) delete self.nullPolyfill.__proto__;
-			if (prototype === null) prototype = self.nullPolyfill;
-			obj.__proto__ = prototype;
-			if (isNullBase) defineProperty(self.nullPolyfill, '__proto__', nullDesc);
-			return obj;
-		};
-	}
-	return Object.defineProperty(fn, 'level', { configurable: false,
-		enumerable: false, writable: false, value: status.level });
-})((function () {
-	var x = Object.create(null),
-	    y = {},
-	    set,
-	    desc = Object.getOwnPropertyDescriptor(Object.prototype, '__proto__');
-
-	if (desc) {
-		try {
-			set = desc.set; // Opera crashes at this point
-			set.call(x, y);
-		} catch (ignore) {}
-		if (Object.getPrototypeOf(x) === y) return { set: set, level: 2 };
-	}
-
-	x.__proto__ = y;
-	if (Object.getPrototypeOf(x) === y) return { level: 2 };
-
-	x = {};
-	x.__proto__ = y;
-	if (Object.getPrototypeOf(x) === y) return { level: 1 };
-
-	return false;
-})());
-
-require('../create');
-
-},{"../create":27,"../is-object":30,"../valid-value":41}],40:[function(require,module,exports){
-'use strict';
-
-module.exports = function (fn) {
-	if (typeof fn !== 'function') throw new TypeError(fn + ' is not a function');
-	return fn;
-};
-
-},{}],41:[function(require,module,exports){
-"use strict";
-
-module.exports = function (value) {
-	if (value == null) throw new TypeError("Cannot use null or undefined");
-	return value;
-};
-
-},{}],42:[function(require,module,exports){
-'use strict';
-
-module.exports = require('./is-implemented')() ? String.prototype.contains : require('./shim');
-
-},{"./is-implemented":43,"./shim":44}],43:[function(require,module,exports){
-'use strict';
-
-var str = 'razdwatrzy';
-
-module.exports = function () {
-	if (typeof str.contains !== 'function') return false;
-	return str.contains('dwa') === true && str.contains('foo') === false;
-};
-
-},{}],44:[function(require,module,exports){
-'use strict';
-
-var indexOf = String.prototype.indexOf;
-
-module.exports = function (searchString /*, position*/) {
-	return indexOf.call(this, searchString, arguments[1]) > -1;
-};
-
-},{}],45:[function(require,module,exports){
-'use strict';
-
-var toString = Object.prototype.toString,
-    id = toString.call('');
-
-module.exports = function (x) {
-		return typeof x === 'string' || x && typeof x === 'object' && (x instanceof String || toString.call(x) === id) || false;
-};
-
-},{}],46:[function(require,module,exports){
-'use strict';
-
-var setPrototypeOf = require('es5-ext/object/set-prototype-of'),
-    contains = require('es5-ext/string/#/contains'),
-    d = require('d'),
-    Iterator = require('./'),
-    defineProperty = Object.defineProperty,
-    ArrayIterator;
-
-ArrayIterator = module.exports = function (arr, kind) {
-	if (!(this instanceof ArrayIterator)) return new ArrayIterator(arr, kind);
-	Iterator.call(this, arr);
-	if (!kind) kind = 'value';else if (contains.call(kind, 'key+value')) kind = 'key+value';else if (contains.call(kind, 'key')) kind = 'key';else kind = 'value';
-	defineProperty(this, '__kind__', d('', kind));
-};
-if (setPrototypeOf) setPrototypeOf(ArrayIterator, Iterator);
-
-ArrayIterator.prototype = Object.create(Iterator.prototype, {
-	constructor: d(ArrayIterator),
-	_resolve: d(function (i) {
-		if (this.__kind__ === 'value') return this.__list__[i];
-		if (this.__kind__ === 'key+value') return [i, this.__list__[i]];
-		return i;
-	}),
-	toString: d(function () {
-		return '[object Array Iterator]';
-	})
-});
-
-},{"./":49,"d":14,"es5-ext/object/set-prototype-of":37,"es5-ext/string/#/contains":42}],47:[function(require,module,exports){
-'use strict';
-
-var callable = require('es5-ext/object/valid-callable'),
-    isString = require('es5-ext/string/is-string'),
-    get = require('./get'),
-    isArray = Array.isArray,
-    call = Function.prototype.call;
-
-module.exports = function (iterable, cb /*, thisArg*/) {
-	var mode,
-	    thisArg = arguments[2],
-	    result,
-	    doBreak,
-	    broken,
-	    i,
-	    l,
-	    char,
-	    code;
-	if (isArray(iterable)) mode = 'array';else if (isString(iterable)) mode = 'string';else iterable = get(iterable);
-
-	callable(cb);
-	doBreak = function () {
-		broken = true;
-	};
-	if (mode === 'array') {
-		iterable.some(function (value) {
-			call.call(cb, thisArg, value, doBreak);
-			if (broken) return true;
-		});
-		return;
-	}
-	if (mode === 'string') {
-		l = iterable.length;
-		for (i = 0; i < l; ++i) {
-			char = iterable[i];
-			if (i + 1 < l) {
-				code = char.charCodeAt(0);
-				if (code >= 55296 && code <= 56319) char += iterable[++i];
-			}
-			call.call(cb, thisArg, char, doBreak);
-			if (broken) break;
-		}
-		return;
-	}
-	result = iterable.next();
-
-	while (!result.done) {
-		call.call(cb, thisArg, result.value, doBreak);
-		if (broken) return;
-		result = iterable.next();
-	}
-};
-
-},{"./get":48,"es5-ext/object/valid-callable":40,"es5-ext/string/is-string":45}],48:[function(require,module,exports){
-'use strict';
-
-var isString = require('es5-ext/string/is-string'),
-    ArrayIterator = require('./array'),
-    StringIterator = require('./string'),
-    iterable = require('./valid-iterable'),
-    iteratorSymbol = require('es6-symbol').iterator;
-
-module.exports = function (obj) {
-  if (typeof iterable(obj)[iteratorSymbol] === 'function') return obj[iteratorSymbol]();
-  if (isString(obj)) return new StringIterator(obj);
-  return new ArrayIterator(obj);
-};
-
-},{"./array":46,"./string":56,"./valid-iterable":57,"es5-ext/string/is-string":45,"es6-symbol":51}],49:[function(require,module,exports){
-'use strict';
-
-var clear = require('es5-ext/array/#/clear'),
-    assign = require('es5-ext/object/assign'),
-    callable = require('es5-ext/object/valid-callable'),
-    value = require('es5-ext/object/valid-value'),
-    d = require('d'),
-    autoBind = require('d/auto-bind'),
-    Symbol = require('es6-symbol'),
-    defineProperty = Object.defineProperty,
-    defineProperties = Object.defineProperties,
-    Iterator;
-
-module.exports = Iterator = function (list, context) {
-	if (!(this instanceof Iterator)) return new Iterator(list, context);
-	defineProperties(this, {
-		__list__: d('w', value(list)),
-		__context__: d('w', context),
-		__nextIndex__: d('w', 0)
-	});
-	if (!context) return;
-	callable(context.on);
-	context.on('_add', this._onAdd);
-	context.on('_delete', this._onDelete);
-	context.on('_clear', this._onClear);
-};
-
-defineProperties(Iterator.prototype, assign({
-	constructor: d(Iterator),
-	_next: d(function () {
-		var i;
-		if (!this.__list__) return;
-		if (this.__redo__) {
-			i = this.__redo__.shift();
-			if (i !== undefined) return i;
-		}
-		if (this.__nextIndex__ < this.__list__.length) return this.__nextIndex__++;
-		this._unBind();
-	}),
-	next: d(function () {
-		return this._createResult(this._next());
-	}),
-	_createResult: d(function (i) {
-		if (i === undefined) return { done: true, value: undefined };
-		return { done: false, value: this._resolve(i) };
-	}),
-	_resolve: d(function (i) {
-		return this.__list__[i];
-	}),
-	_unBind: d(function () {
-		this.__list__ = null;
-		delete this.__redo__;
-		if (!this.__context__) return;
-		this.__context__.off('_add', this._onAdd);
-		this.__context__.off('_delete', this._onDelete);
-		this.__context__.off('_clear', this._onClear);
-		this.__context__ = null;
-	}),
-	toString: d(function () {
-		return '[object Iterator]';
-	})
-}, autoBind({
-	_onAdd: d(function (index) {
-		if (index >= this.__nextIndex__) return;
-		++this.__nextIndex__;
-		if (!this.__redo__) {
-			defineProperty(this, '__redo__', d('c', [index]));
-			return;
-		}
-		this.__redo__.forEach(function (redo, i) {
-			if (redo >= index) this.__redo__[i] = ++redo;
-		}, this);
-		this.__redo__.push(index);
-	}),
-	_onDelete: d(function (index) {
-		var i;
-		if (index >= this.__nextIndex__) return;
-		--this.__nextIndex__;
-		if (!this.__redo__) return;
-		i = this.__redo__.indexOf(index);
-		if (i !== -1) this.__redo__.splice(i, 1);
-		this.__redo__.forEach(function (redo, i) {
-			if (redo > index) this.__redo__[i] = --redo;
-		}, this);
-	}),
-	_onClear: d(function () {
-		if (this.__redo__) clear.call(this.__redo__);
-		this.__nextIndex__ = 0;
-	})
-})));
-
-defineProperty(Iterator.prototype, Symbol.iterator, d(function () {
-	return this;
-}));
-defineProperty(Iterator.prototype, Symbol.toStringTag, d('', 'Iterator'));
-
-},{"d":14,"d/auto-bind":13,"es5-ext/array/#/clear":15,"es5-ext/object/assign":23,"es5-ext/object/valid-callable":40,"es5-ext/object/valid-value":41,"es6-symbol":51}],50:[function(require,module,exports){
-'use strict';
-
-var isString = require('es5-ext/string/is-string'),
-    iteratorSymbol = require('es6-symbol').iterator,
-    isArray = Array.isArray;
-
-module.exports = function (value) {
-	if (value == null) return false;
-	if (isArray(value)) return true;
-	if (isString(value)) return true;
-	return typeof value[iteratorSymbol] === 'function';
-};
-
-},{"es5-ext/string/is-string":45,"es6-symbol":51}],51:[function(require,module,exports){
-'use strict';
-
-module.exports = require('./is-implemented')() ? Symbol : require('./polyfill');
-
-},{"./is-implemented":52,"./polyfill":54}],52:[function(require,module,exports){
-'use strict';
-
-module.exports = function () {
-	var symbol;
-	if (typeof Symbol !== 'function') return false;
-	symbol = Symbol('test symbol');
-	try {
-		String(symbol);
-	} catch (e) {
-		return false;
-	}
-	if (typeof Symbol.iterator === 'symbol') return true;
-
-	// Return 'true' for polyfills
-	if (typeof Symbol.isConcatSpreadable !== 'object') return false;
-	if (typeof Symbol.iterator !== 'object') return false;
-	if (typeof Symbol.toPrimitive !== 'object') return false;
-	if (typeof Symbol.toStringTag !== 'object') return false;
-	if (typeof Symbol.unscopables !== 'object') return false;
-
-	return true;
-};
-
-},{}],53:[function(require,module,exports){
-'use strict';
-
-module.exports = function (x) {
-	return x && (typeof x === 'symbol' || x['@@toStringTag'] === 'Symbol') || false;
-};
-
-},{}],54:[function(require,module,exports){
-'use strict';
-
-var d = require('d'),
-    validateSymbol = require('./validate-symbol'),
-    create = Object.create,
-    defineProperties = Object.defineProperties,
-    defineProperty = Object.defineProperty,
-    objPrototype = Object.prototype,
-    Symbol,
-    HiddenSymbol,
-    globalSymbols = create(null);
-
-var generateName = (function () {
-	var created = create(null);
-	return function (desc) {
-		var postfix = 0,
-		    name;
-		while (created[desc + (postfix || '')]) ++postfix;
-		desc += postfix || '';
-		created[desc] = true;
-		name = '@@' + desc;
-		defineProperty(objPrototype, name, d.gs(null, function (value) {
-			defineProperty(this, name, d(value));
-		}));
-		return name;
-	};
-})();
-
-HiddenSymbol = function Symbol(_x) {
-	var _this = this;
-
-	var _again = true;
-
-	_function: while (_again) {
-		_again = false;
-		var description = _x;
-
-		if (_this instanceof HiddenSymbol) throw new TypeError('TypeError: Symbol is not a constructor');
-		_this = undefined;
-		_x = description;
-		_again = true;
-		continue _function;
-	}
-};
-module.exports = Symbol = function Symbol(description) {
-	var symbol;
-	if (this instanceof Symbol) throw new TypeError('TypeError: Symbol is not a constructor');
-	symbol = create(HiddenSymbol.prototype);
-	description = description === undefined ? '' : String(description);
-	return defineProperties(symbol, {
-		__description__: d('', description),
-		__name__: d('', generateName(description))
-	});
-};
-defineProperties(Symbol, {
-	'for': d(function (key) {
-		if (globalSymbols[key]) return globalSymbols[key];
-		return globalSymbols[key] = Symbol(String(key));
-	}),
-	keyFor: d(function (s) {
-		var key;
-		validateSymbol(s);
-		for (key in globalSymbols) if (globalSymbols[key] === s) return key;
-	}),
-	hasInstance: d('', Symbol('hasInstance')),
-	isConcatSpreadable: d('', Symbol('isConcatSpreadable')),
-	iterator: d('', Symbol('iterator')),
-	match: d('', Symbol('match')),
-	replace: d('', Symbol('replace')),
-	search: d('', Symbol('search')),
-	species: d('', Symbol('species')),
-	split: d('', Symbol('split')),
-	toPrimitive: d('', Symbol('toPrimitive')),
-	toStringTag: d('', Symbol('toStringTag')),
-	unscopables: d('', Symbol('unscopables'))
-});
-defineProperties(HiddenSymbol.prototype, {
-	constructor: d(Symbol),
-	toString: d('', function () {
-		return this.__name__;
-	})
-});
-
-defineProperties(Symbol.prototype, {
-	toString: d(function () {
-		return 'Symbol (' + validateSymbol(this).__description__ + ')';
-	}),
-	valueOf: d(function () {
-		return validateSymbol(this);
-	})
-});
-defineProperty(Symbol.prototype, Symbol.toPrimitive, d('', function () {
-	return validateSymbol(this);
-}));
-defineProperty(Symbol.prototype, Symbol.toStringTag, d('c', 'Symbol'));
-
-defineProperty(HiddenSymbol.prototype, Symbol.toPrimitive, d('c', Symbol.prototype[Symbol.toPrimitive]));
-defineProperty(HiddenSymbol.prototype, Symbol.toStringTag, d('c', Symbol.prototype[Symbol.toStringTag]));
-
-},{"./validate-symbol":55,"d":14}],55:[function(require,module,exports){
-'use strict';
-
-var isSymbol = require('./is-symbol');
-
-module.exports = function (value) {
-	if (!isSymbol(value)) throw new TypeError(value + ' is not a symbol');
-	return value;
-};
-
-},{"./is-symbol":53}],56:[function(require,module,exports){
-// Thanks @mathiasbynens
-// http://mathiasbynens.be/notes/javascript-unicode#iterating-over-symbols
-
-'use strict';
-
-var setPrototypeOf = require('es5-ext/object/set-prototype-of'),
-    d = require('d'),
-    Iterator = require('./'),
-    defineProperty = Object.defineProperty,
-    StringIterator;
-
-StringIterator = module.exports = function (str) {
-	if (!(this instanceof StringIterator)) return new StringIterator(str);
-	str = String(str);
-	Iterator.call(this, str);
-	defineProperty(this, '__length__', d('', str.length));
-};
-if (setPrototypeOf) setPrototypeOf(StringIterator, Iterator);
-
-StringIterator.prototype = Object.create(Iterator.prototype, {
-	constructor: d(StringIterator),
-	_next: d(function () {
-		if (!this.__list__) return;
-		if (this.__nextIndex__ < this.__length__) return this.__nextIndex__++;
-		this._unBind();
-	}),
-	_resolve: d(function (i) {
-		var char = this.__list__[i],
-		    code;
-		if (this.__nextIndex__ === this.__length__) return char;
-		code = char.charCodeAt(0);
-		if (code >= 55296 && code <= 56319) return char + this.__list__[this.__nextIndex__++];
-		return char;
-	}),
-	toString: d(function () {
-		return '[object String Iterator]';
-	})
-});
-
-},{"./":49,"d":14,"es5-ext/object/set-prototype-of":37}],57:[function(require,module,exports){
-'use strict';
-
-var isIterable = require('./is-iterable');
-
-module.exports = function (value) {
-	if (!isIterable(value)) throw new TypeError(value + ' is not iterable');
-	return value;
-};
-
-},{"./is-iterable":50}],58:[function(require,module,exports){
-'use strict';
-
-module.exports = require('./is-implemented')() ? Symbol : require('./polyfill');
-
-},{"./is-implemented":59,"./polyfill":60}],59:[function(require,module,exports){
-'use strict';
-
-module.exports = function () {
-	var symbol;
-	if (typeof Symbol !== 'function') return false;
-	symbol = Symbol('test symbol');
-	try {
-		String(symbol);
-	} catch (e) {
-		return false;
-	}
-	if (typeof Symbol.iterator === 'symbol') return true;
-
-	// Return 'true' for polyfills
-	if (typeof Symbol.isConcatSpreadable !== 'object') return false;
-	if (typeof Symbol.isRegExp !== 'object') return false;
-	if (typeof Symbol.iterator !== 'object') return false;
-	if (typeof Symbol.toPrimitive !== 'object') return false;
-	if (typeof Symbol.toStringTag !== 'object') return false;
-	if (typeof Symbol.unscopables !== 'object') return false;
-
-	return true;
-};
-
-},{}],60:[function(require,module,exports){
-'use strict';
-
-var d = require('d'),
-    create = Object.create,
-    defineProperties = Object.defineProperties,
-    generateName,
-    Symbol;
-
-generateName = (function () {
-	var created = create(null);
-	return function (desc) {
-		var postfix = 0;
-		while (created[desc + (postfix || '')]) ++postfix;
-		desc += postfix || '';
-		created[desc] = true;
-		return '@@' + desc;
-	};
-})();
-
-module.exports = Symbol = function (description) {
-	var symbol;
-	if (this instanceof Symbol) {
-		throw new TypeError('TypeError: Symbol is not a constructor');
-	}
-	symbol = create(Symbol.prototype);
-	description = description === undefined ? '' : String(description);
-	return defineProperties(symbol, {
-		__description__: d('', description),
-		__name__: d('', generateName(description))
-	});
-};
-
-Object.defineProperties(Symbol, {
-	create: d('', Symbol('create')),
-	hasInstance: d('', Symbol('hasInstance')),
-	isConcatSpreadable: d('', Symbol('isConcatSpreadable')),
-	isRegExp: d('', Symbol('isRegExp')),
-	iterator: d('', Symbol('iterator')),
-	toPrimitive: d('', Symbol('toPrimitive')),
-	toStringTag: d('', Symbol('toStringTag')),
-	unscopables: d('', Symbol('unscopables'))
-});
-
-defineProperties(Symbol.prototype, {
-	properToString: d(function () {
-		return 'Symbol (' + this.__description__ + ')';
-	}),
-	toString: d('', function () {
-		return this.__name__;
-	})
-});
-Object.defineProperty(Symbol.prototype, Symbol.toPrimitive, d('', function (hint) {
-	throw new TypeError('Conversion of symbol objects is not allowed');
-}));
-Object.defineProperty(Symbol.prototype, Symbol.toStringTag, d('c', 'Symbol'));
-
-},{"d":14}],61:[function(require,module,exports){
-'use strict';
-
-var d = require('d'),
-    callable = require('es5-ext/object/valid-callable'),
-    apply = Function.prototype.apply,
-    call = Function.prototype.call,
-    create = Object.create,
-    defineProperty = Object.defineProperty,
-    defineProperties = Object.defineProperties,
-    hasOwnProperty = Object.prototype.hasOwnProperty,
-    descriptor = { configurable: true, enumerable: false, writable: true },
-    on,
-    once,
-    off,
-    emit,
-    methods,
-    descriptors,
-    base;
-
-on = function (type, listener) {
-	var data;
-
-	callable(listener);
-
-	if (!hasOwnProperty.call(this, '__ee__')) {
-		data = descriptor.value = create(null);
-		defineProperty(this, '__ee__', descriptor);
-		descriptor.value = null;
-	} else {
-		data = this.__ee__;
-	}
-	if (!data[type]) data[type] = listener;else if (typeof data[type] === 'object') data[type].push(listener);else data[type] = [data[type], listener];
-
-	return this;
-};
-
-once = function (type, listener) {
-	var once, self;
-
-	callable(listener);
-	self = this;
-	on.call(this, type, once = function () {
-		off.call(self, type, once);
-		apply.call(listener, this, arguments);
-	});
-
-	once.__eeOnceListener__ = listener;
-	return this;
-};
-
-off = function (type, listener) {
-	var data, listeners, candidate, i;
-
-	callable(listener);
-
-	if (!hasOwnProperty.call(this, '__ee__')) return this;
-	data = this.__ee__;
-	if (!data[type]) return this;
-	listeners = data[type];
-
-	if (typeof listeners === 'object') {
-		for (i = 0; candidate = listeners[i]; ++i) {
-			if (candidate === listener || candidate.__eeOnceListener__ === listener) {
-				if (listeners.length === 2) data[type] = listeners[i ? 0 : 1];else listeners.splice(i, 1);
-			}
-		}
-	} else {
-		if (listeners === listener || listeners.__eeOnceListener__ === listener) {
-			delete data[type];
-		}
-	}
-
-	return this;
-};
-
-emit = function (type) {
-	var i, l, listener, listeners, args;
-
-	if (!hasOwnProperty.call(this, '__ee__')) return;
-	listeners = this.__ee__[type];
-	if (!listeners) return;
-
-	if (typeof listeners === 'object') {
-		l = arguments.length;
-		args = new Array(l - 1);
-		for (i = 1; i < l; ++i) args[i - 1] = arguments[i];
-
-		listeners = listeners.slice();
-		for (i = 0; listener = listeners[i]; ++i) {
-			apply.call(listener, this, args);
-		}
-	} else {
-		switch (arguments.length) {
-			case 1:
-				call.call(listeners, this);
-				break;
-			case 2:
-				call.call(listeners, this, arguments[1]);
-				break;
-			case 3:
-				call.call(listeners, this, arguments[1], arguments[2]);
-				break;
-			default:
-				l = arguments.length;
-				args = new Array(l - 1);
-				for (i = 1; i < l; ++i) {
-					args[i - 1] = arguments[i];
-				}
-				apply.call(listeners, this, args);
-		}
-	}
-};
-
-methods = {
-	on: on,
-	once: once,
-	off: off,
-	emit: emit
-};
-
-descriptors = {
-	on: d(on),
-	once: d(once),
-	off: d(off),
-	emit: d(emit)
-};
-
-base = defineProperties({}, descriptors);
-
-module.exports = exports = function (o) {
-	return o == null ? create(base) : defineProperties(Object(o), descriptors);
-};
-exports.methods = methods;
-
-},{"d":14,"es5-ext/object/valid-callable":40}],62:[function(require,module,exports){
-'use strict';
-
-var clear = require('es5-ext/array/#/clear'),
-    eIndexOf = require('es5-ext/array/#/e-index-of'),
-    setPrototypeOf = require('es5-ext/object/set-prototype-of'),
-    callable = require('es5-ext/object/valid-callable'),
-    validValue = require('es5-ext/object/valid-value'),
-    d = require('d'),
-    ee = require('event-emitter'),
-    Symbol = require('es6-symbol'),
-    iterator = require('es6-iterator/valid-iterable'),
-    forOf = require('es6-iterator/for-of'),
-    Iterator = require('./lib/iterator'),
-    isNative = require('./is-native-implemented'),
-    call = Function.prototype.call,
-    defineProperties = Object.defineProperties,
-    MapPoly;
-
-module.exports = MapPoly = function () {
-	var iterable = arguments[0],
-	    keys,
-	    values;
-	if (!(this instanceof MapPoly)) return new MapPoly(iterable);
-	if (this.__mapKeysData__ !== undefined) {
-		throw new TypeError(this + ' cannot be reinitialized');
-	}
-	if (iterable != null) iterator(iterable);
-	defineProperties(this, {
-		__mapKeysData__: d('c', keys = []),
-		__mapValuesData__: d('c', values = [])
-	});
-	if (!iterable) return;
-	forOf(iterable, function (value) {
-		var key = validValue(value)[0];
-		value = value[1];
-		if (eIndexOf.call(keys, key) !== -1) return;
-		keys.push(key);
-		values.push(value);
-	}, this);
-};
-
-if (isNative) {
-	if (setPrototypeOf) setPrototypeOf(MapPoly, Map);
-	MapPoly.prototype = Object.create(Map.prototype, {
-		constructor: d(MapPoly)
-	});
-}
-
-ee(defineProperties(MapPoly.prototype, {
-	clear: d(function () {
-		if (!this.__mapKeysData__.length) return;
-		clear.call(this.__mapKeysData__);
-		clear.call(this.__mapValuesData__);
-		this.emit('_clear');
-	}),
-	'delete': d(function (key) {
-		var index = eIndexOf.call(this.__mapKeysData__, key);
-		if (index === -1) return false;
-		this.__mapKeysData__.splice(index, 1);
-		this.__mapValuesData__.splice(index, 1);
-		this.emit('_delete', index, key);
-		return true;
-	}),
-	entries: d(function () {
-		return new Iterator(this, 'key+value');
-	}),
-	forEach: d(function (cb /*, thisArg*/) {
-		var thisArg = arguments[1],
-		    iterator,
-		    result;
-		callable(cb);
-		iterator = this.entries();
-		result = iterator._next();
-		while (result !== undefined) {
-			call.call(cb, thisArg, this.__mapValuesData__[result], this.__mapKeysData__[result], this);
-			result = iterator._next();
-		}
-	}),
-	get: d(function (key) {
-		var index = eIndexOf.call(this.__mapKeysData__, key);
-		if (index === -1) return;
-		return this.__mapValuesData__[index];
-	}),
-	has: d(function (key) {
-		return eIndexOf.call(this.__mapKeysData__, key) !== -1;
-	}),
-	keys: d(function () {
-		return new Iterator(this, 'key');
-	}),
-	set: d(function (key, value) {
-		var index = eIndexOf.call(this.__mapKeysData__, key),
-		    emit;
-		if (index === -1) {
-			index = this.__mapKeysData__.push(key) - 1;
-			emit = true;
-		}
-		this.__mapValuesData__[index] = value;
-		if (emit) this.emit('_add', index, key);
-		return this;
-	}),
-	size: d.gs(function () {
-		return this.__mapKeysData__.length;
-	}),
-	values: d(function () {
-		return new Iterator(this, 'value');
-	}),
-	toString: d(function () {
-		return '[object Map]';
-	})
-}));
-Object.defineProperty(MapPoly.prototype, Symbol.iterator, d(function () {
-	return this.entries();
-}));
-Object.defineProperty(MapPoly.prototype, Symbol.toStringTag, d('c', 'Map'));
-/*iterable*/
-
-},{"./is-native-implemented":10,"./lib/iterator":12,"d":14,"es5-ext/array/#/clear":15,"es5-ext/array/#/e-index-of":16,"es5-ext/object/set-prototype-of":37,"es5-ext/object/valid-callable":40,"es5-ext/object/valid-value":41,"es6-iterator/for-of":47,"es6-iterator/valid-iterable":57,"es6-symbol":58,"event-emitter":61}],63:[function(require,module,exports){
+(function (exports) {
+  'use strict';
+  //shared pointer
+  var i;
+  //shortcuts
+  var defineProperty = Object.defineProperty,
+      is = function is(a, b) {
+    return isNaN(a) ? isNaN(b) : a === b;
+  };
+
+  //Polyfill global objects
+  if (typeof WeakMap == 'undefined') {
+    exports.WeakMap = createCollection({
+      // WeakMap#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // WeakMap#clear():
+      clear: sharedClear,
+      // WeakMap#get(key:void*):void*
+      get: sharedGet,
+      // WeakMap#has(key:void*):boolean
+      has: mapHas,
+      // WeakMap#set(key:void*, value:void*):void
+      set: sharedSet
+    }, true);
+  }
+
+  if (typeof Map == 'undefined') {
+    exports.Map = createCollection({
+      // WeakMap#delete(key:void*):boolean
+      'delete': sharedDelete,
+      //:was Map#get(key:void*[, d3fault:void*]):void*
+      // Map#has(key:void*):boolean
+      has: mapHas,
+      // Map#get(key:void*):boolean
+      get: sharedGet,
+      // Map#set(key:void*, value:void*):void
+      set: sharedSet,
+      // Map#keys(void):Iterator
+      keys: sharedKeys,
+      // Map#values(void):Iterator
+      values: sharedValues,
+      // Map#entries(void):Iterator
+      entries: mapEntries,
+      // Map#forEach(callback:Function, context:void*):void ==> callback.call(context, key, value, mapObject) === not in specs`
+      forEach: sharedForEach,
+      // Map#clear():
+      clear: sharedClear
+    });
+  }
+
+  if (typeof Set == 'undefined') {
+    exports.Set = createCollection({
+      // Set#has(value:void*):boolean
+      has: setHas,
+      // Set#add(value:void*):boolean
+      add: sharedAdd,
+      // Set#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // Set#clear():
+      clear: sharedClear,
+      // Set#keys(void):Iterator
+      keys: sharedValues, // specs actually say "the same function object as the initial value of the values property"
+      // Set#values(void):Iterator
+      values: sharedValues,
+      // Set#entries(void):Iterator
+      entries: setEntries,
+      // Set#forEach(callback:Function, context:void*):void ==> callback.call(context, value, index) === not in specs
+      forEach: sharedSetIterate
+    });
+  }
+
+  if (typeof WeakSet == 'undefined') {
+    exports.WeakSet = createCollection({
+      // WeakSet#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // WeakSet#add(value:void*):boolean
+      add: sharedAdd,
+      // WeakSet#clear():
+      clear: sharedClear,
+      // WeakSet#has(value:void*):boolean
+      has: setHas
+    }, true);
+  }
+
+  /**
+   * ES6 collection constructor
+   * @return {Function} a collection class
+   */
+  function createCollection(proto, objectOnly) {
+    function Collection(a) {
+      if (!this || this.constructor !== Collection) return new Collection(a);
+      this._keys = [];
+      this._values = [];
+      this.objectOnly = objectOnly;
+
+      //parse initial iterable argument passed
+      if (a) init.call(this, a);
+    }
+
+    //define size for non object-only collections
+    if (!objectOnly) {
+      defineProperty(proto, 'size', {
+        get: sharedSize
+      });
+    }
+
+    //set prototype
+    proto.constructor = Collection;
+    Collection.prototype = proto;
+
+    return Collection;
+  }
+
+  /** parse initial iterable argument passed */
+  function init(a) {
+    var i;
+    //init Set argument, like `[1,2,3,{}]`
+    if (this.add) a.forEach(this.add, this);
+    //init Map argument like `[[1,2], [{}, 4]]`
+    else a.forEach(function (a) {
+      this.set(a[0], a[1]);
+    }, this);
+  }
+
+  /** delete */
+  function sharedDelete(key) {
+    if (this.has(key)) {
+      this._keys.splice(i, 1);
+      this._values.splice(i, 1);
+    }
+    // Aurora here does it while Canary doesn't
+    return -1 < i;
+  };
+
+  function sharedGet(key) {
+    return this.has(key) ? this._values[i] : undefined;
+  }
+
+  function has(list, key) {
+    if (this.objectOnly && key !== Object(key)) throw new TypeError('Invalid value used as weak collection key');
+    //NaN or 0 passed
+    if (key != key || key === 0) for (i = list.length; i-- && !is(list[i], key);) {} else i = list.indexOf(key);
+    return -1 < i;
+  }
+
+  function setHas(value) {
+    return has.call(this, this._values, value);
+  }
+
+  function mapHas(value) {
+    return has.call(this, this._keys, value);
+  }
+
+  /** @chainable */
+  function sharedSet(key, value) {
+    this.has(key) ? this._values[i] = value : this._values[this._keys.push(key) - 1] = value;
+    return this;
+  }
+
+  /** @chainable */
+  function sharedAdd(value) {
+    if (!this.has(value)) this._values.push(value);
+    return this;
+  }
+
+  function sharedClear() {
+    this._values.length = 0;
+  }
+
+  /** keys, values, and iterate related methods */
+  function sharedKeys() {
+    return sharedIterator(this._keys);
+  }
+
+  function sharedValues() {
+    return sharedIterator(this._values);
+  }
+
+  function mapEntries() {
+    return sharedIterator(this._keys, this._values);
+  }
+
+  function setEntries() {
+    return sharedIterator(this._values, this._values);
+  }
+
+  function sharedIterator(array, array2) {
+    var j = 0,
+        done = false;
+    return {
+      next: function next() {
+        var v;
+        if (!done && j < array.length) {
+          v = array2 ? [array[j], array2[j]] : array[j];
+          j += 1;
+        } else {
+          done = true;
+        }
+        return { done: done, value: v };
+      }
+    };
+  }
+
+  function sharedSize() {
+    return this._values.length;
+  }
+
+  function sharedForEach(callback, context) {
+    var self = this;
+    var values = self._values.slice();
+    self._keys.slice().forEach(function (key, n) {
+      callback.call(context, values[n], key, self);
+    });
+  }
+
+  function sharedSetIterate(callback, context) {
+    var self = this;
+    self._values.slice().forEach(function (value) {
+      callback.call(context, value, value, self);
+    });
+  }
+})(typeof exports != 'undefined' && typeof global != 'undefined' ? global : window);
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],9:[function(require,module,exports){
 (function (process,global){
 'use strict';;(function(undefined){var objectTypes={'boolean':false, 'function':true, 'object':true, 'number':false, 'string':false, 'undefined':false};var root=objectTypes[typeof window] && window || this, freeExports=objectTypes[typeof exports] && exports && !exports.nodeType && exports, freeModule=objectTypes[typeof module] && module && !module.nodeType && module, moduleExports=freeModule && freeModule.exports === freeExports && freeExports, freeGlobal=objectTypes[typeof global] && global;if(freeGlobal && (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal)){root = freeGlobal;}var Rx={internals:{}, config:{Promise:root.Promise}, helpers:{}};var noop=Rx.helpers.noop = function(){}, notDefined=Rx.helpers.notDefined = function(x){return typeof x === 'undefined';}, identity=Rx.helpers.identity = function(x){return x;}, pluck=Rx.helpers.pluck = function(property){return function(x){return x[property];};}, just=Rx.helpers.just = function(value){return function(){return value;};}, defaultNow=Rx.helpers.defaultNow = Date.now, defaultComparer=Rx.helpers.defaultComparer = function(x, y){return isEqual(x, y);}, defaultSubComparer=Rx.helpers.defaultSubComparer = function(x, y){return x > y?1:x < y?-1:0;}, defaultKeySerializer=Rx.helpers.defaultKeySerializer = function(x){return x.toString();}, defaultError=Rx.helpers.defaultError = function(err){throw err;}, isPromise=Rx.helpers.isPromise = function(p){return !!p && typeof p.then === 'function';}, asArray=Rx.helpers.asArray = function(){return Array.prototype.slice.call(arguments);}, not=Rx.helpers.not = function(a){return !a;}, isFunction=Rx.helpers.isFunction = (function(){var isFn=function isFn(value){return typeof value == 'function' || false;};if(isFn(/x/)){isFn = function(value){return typeof value == 'function' && toString.call(value) == '[object Function]';};}return isFn;})();function cloneArray(arr){for(var a=[], i=0, len=arr.length; i < len; i++) {a.push(arr[i]);}return a;}Rx.config.longStackSupport = false;var hasStacks=false;try{throw new Error();}catch(e) {hasStacks = !!e.stack;}var rStartingLine=captureLine(), rFileName;var STACK_JUMP_SEPARATOR='From previous event:';function makeStackTraceLong(error, observable){if(hasStacks && observable.stack && typeof error === 'object' && error !== null && error.stack && error.stack.indexOf(STACK_JUMP_SEPARATOR) === -1){var stacks=[];for(var o=observable; !!o; o = o.source) {if(o.stack){stacks.unshift(o.stack);}}stacks.unshift(error.stack);var concatedStacks=stacks.join('\n' + STACK_JUMP_SEPARATOR + '\n');error.stack = filterStackString(concatedStacks);}}function filterStackString(stackString){var lines=stackString.split('\n'), desiredLines=[];for(var i=0, len=lines.length; i < len; i++) {var line=lines[i];if(!isInternalFrame(line) && !isNodeFrame(line) && line){desiredLines.push(line);}}return desiredLines.join('\n');}function isInternalFrame(stackLine){var fileNameAndLineNumber=getFileNameAndLineNumber(stackLine);if(!fileNameAndLineNumber){return false;}var fileName=fileNameAndLineNumber[0], lineNumber=fileNameAndLineNumber[1];return fileName === rFileName && lineNumber >= rStartingLine && lineNumber <= rEndingLine;}function isNodeFrame(stackLine){return stackLine.indexOf('(module.js:') !== -1 || stackLine.indexOf('(node.js:') !== -1;}function captureLine(){if(!hasStacks){return;}try{throw new Error();}catch(e) {var lines=e.stack.split('\n');var firstLine=lines[0].indexOf('@') > 0?lines[1]:lines[2];var fileNameAndLineNumber=getFileNameAndLineNumber(firstLine);if(!fileNameAndLineNumber){return;}rFileName = fileNameAndLineNumber[0];return fileNameAndLineNumber[1];}}function getFileNameAndLineNumber(stackLine){var attempt1=/at .+ \((.+):(\d+):(?:\d+)\)$/.exec(stackLine);if(attempt1){return [attempt1[1], Number(attempt1[2])];}var attempt2=/at ([^ ]+):(\d+):(?:\d+)$/.exec(stackLine);if(attempt2){return [attempt2[1], Number(attempt2[2])];}var attempt3=/.*@(.+):(\d+)$/.exec(stackLine);if(attempt3){return [attempt3[1], Number(attempt3[2])];}}var EmptyError=Rx.EmptyError = function(){this.message = 'Sequence contains no elements.';Error.call(this);};EmptyError.prototype = Error.prototype;var ObjectDisposedError=Rx.ObjectDisposedError = function(){this.message = 'Object has been disposed';Error.call(this);};ObjectDisposedError.prototype = Error.prototype;var ArgumentOutOfRangeError=Rx.ArgumentOutOfRangeError = function(){this.message = 'Argument out of range';Error.call(this);};ArgumentOutOfRangeError.prototype = Error.prototype;var NotSupportedError=Rx.NotSupportedError = function(message){this.message = message || 'This operation is not supported';Error.call(this);};NotSupportedError.prototype = Error.prototype;var NotImplementedError=Rx.NotImplementedError = function(message){this.message = message || 'This operation is not implemented';Error.call(this);};NotImplementedError.prototype = Error.prototype;var notImplemented=Rx.helpers.notImplemented = function(){throw new NotImplementedError();};var notSupported=Rx.helpers.notSupported = function(){throw new NotSupportedError();};var $iterator$=typeof Symbol === 'function' && Symbol.iterator || '_es6shim_iterator_';if(root.Set && typeof new root.Set()['@@iterator'] === 'function'){$iterator$ = '@@iterator';}var doneEnumerator=Rx.doneEnumerator = {done:true, value:undefined};var isIterable=Rx.helpers.isIterable = function(o){return o[$iterator$] !== undefined;};var isArrayLike=Rx.helpers.isArrayLike = function(o){return o && o.length !== undefined;};Rx.helpers.iterator = $iterator$;var bindCallback=Rx.internals.bindCallback = function(func, thisArg, argCount){if(typeof thisArg === 'undefined'){return func;}switch(argCount){case 0:return function(){return func.call(thisArg);};case 1:return function(arg){return func.call(thisArg, arg);};case 2:return function(value, index){return func.call(thisArg, value, index);};case 3:return function(value, index, collection){return func.call(thisArg, value, index, collection);};}return function(){return func.apply(thisArg, arguments);};};var dontEnums=['toString', 'toLocaleString', 'valueOf', 'hasOwnProperty', 'isPrototypeOf', 'propertyIsEnumerable', 'constructor'], dontEnumsLength=dontEnums.length;var argsClass='[object Arguments]', arrayClass='[object Array]', boolClass='[object Boolean]', dateClass='[object Date]', errorClass='[object Error]', funcClass='[object Function]', numberClass='[object Number]', objectClass='[object Object]', regexpClass='[object RegExp]', stringClass='[object String]';var toString=Object.prototype.toString, hasOwnProperty=Object.prototype.hasOwnProperty, supportsArgsClass=toString.call(arguments) == argsClass, supportNodeClass, errorProto=Error.prototype, objectProto=Object.prototype, stringProto=String.prototype, propertyIsEnumerable=objectProto.propertyIsEnumerable;try{supportNodeClass = !(toString.call(document) == objectClass && !({'toString':0} + ''));}catch(e) {supportNodeClass = true;}var nonEnumProps={};nonEnumProps[arrayClass] = nonEnumProps[dateClass] = nonEnumProps[numberClass] = {'constructor':true, 'toLocaleString':true, 'toString':true, 'valueOf':true};nonEnumProps[boolClass] = nonEnumProps[stringClass] = {'constructor':true, 'toString':true, 'valueOf':true};nonEnumProps[errorClass] = nonEnumProps[funcClass] = nonEnumProps[regexpClass] = {'constructor':true, 'toString':true};nonEnumProps[objectClass] = {'constructor':true};var support={};(function(){var ctor=function ctor(){this.x = 1;}, props=[];ctor.prototype = {'valueOf':1, 'y':1};for(var key in new ctor()) {props.push(key);}for(key in arguments) {}support.enumErrorProps = propertyIsEnumerable.call(errorProto, 'message') || propertyIsEnumerable.call(errorProto, 'name');support.enumPrototypes = propertyIsEnumerable.call(ctor, 'prototype');support.nonEnumArgs = key != 0;support.nonEnumShadows = !/valueOf/.test(props);})(1);var isObject=Rx.internals.isObject = function(value){var type=typeof value;return value && (type == 'function' || type == 'object') || false;};function keysIn(object){var result=[];if(!isObject(object)){return result;}if(support.nonEnumArgs && object.length && isArguments(object)){object = slice.call(object);}var skipProto=support.enumPrototypes && typeof object == 'function', skipErrorProps=support.enumErrorProps && (object === errorProto || object instanceof Error);for(var key in object) {if(!(skipProto && key == 'prototype') && !(skipErrorProps && (key == 'message' || key == 'name'))){result.push(key);}}if(support.nonEnumShadows && object !== objectProto){var ctor=object.constructor, index=-1, length=dontEnumsLength;if(object === (ctor && ctor.prototype)){var className=object === stringProto?stringClass:object === errorProto?errorClass:toString.call(object), nonEnum=nonEnumProps[className];}while(++index < length) {key = dontEnums[index];if(!(nonEnum && nonEnum[key]) && hasOwnProperty.call(object, key)){result.push(key);}}}return result;}function internalFor(object, callback, keysFunc){var index=-1, props=keysFunc(object), length=props.length;while(++index < length) {var key=props[index];if(callback(object[key], key, object) === false){break;}}return object;}function internalForIn(object, callback){return internalFor(object, callback, keysIn);}function isNode(value){return typeof value.toString != 'function' && typeof (value + '') == 'string';}var isArguments=function isArguments(value){return value && typeof value == 'object'?toString.call(value) == argsClass:false;};if(!supportsArgsClass){isArguments = function(value){return value && typeof value == 'object'?hasOwnProperty.call(value, 'callee'):false;};}var isEqual=Rx.internals.isEqual = function(x, y){return deepEquals(x, y, [], []);};function deepEquals(a, b, stackA, stackB){if(a === b){return a !== 0 || 1 / a == 1 / b;}var type=typeof a, otherType=typeof b;if(a === a && (a == null || b == null || type != 'function' && type != 'object' && otherType != 'function' && otherType != 'object')){return false;}var className=toString.call(a), otherClass=toString.call(b);if(className == argsClass){className = objectClass;}if(otherClass == argsClass){otherClass = objectClass;}if(className != otherClass){return false;}switch(className){case boolClass:case dateClass:return +a == +b;case numberClass:return a != +a?b != +b:a == 0?1 / a == 1 / b:a == +b;case regexpClass:case stringClass:return a == String(b);}var isArr=className == arrayClass;if(!isArr){if(className != objectClass || !support.nodeClass && (isNode(a) || isNode(b))){return false;}var ctorA=!support.argsObject && isArguments(a)?Object:a.constructor, ctorB=!support.argsObject && isArguments(b)?Object:b.constructor;if(ctorA != ctorB && !(hasOwnProperty.call(a, 'constructor') && hasOwnProperty.call(b, 'constructor')) && !(isFunction(ctorA) && ctorA instanceof ctorA && isFunction(ctorB) && ctorB instanceof ctorB) && ('constructor' in a && 'constructor' in b)){return false;}}var initedStack=!stackA;stackA || (stackA = []);stackB || (stackB = []);var length=stackA.length;while(length--) {if(stackA[length] == a){return stackB[length] == b;}}var size=0;var result=true;stackA.push(a);stackB.push(b);if(isArr){length = a.length;size = b.length;result = size == length;if(result){while(size--) {var index=length, value=b[size];if(!(result = deepEquals(a[size], value, stackA, stackB))){break;}}}}else {internalForIn(b, function(value, key, b){if(hasOwnProperty.call(b, key)){size++;return result = hasOwnProperty.call(a, key) && deepEquals(a[key], value, stackA, stackB);}});if(result){internalForIn(a, function(value, key, a){if(hasOwnProperty.call(a, key)){return result = --size > -1;}});}}stackA.pop();stackB.pop();return result;}var hasProp=({}).hasOwnProperty, slice=Array.prototype.slice;var inherits=this.inherits = Rx.internals.inherits = function(child, parent){function __(){this.constructor = child;}__.prototype = parent.prototype;child.prototype = new __();};var addProperties=Rx.internals.addProperties = function(obj){for(var sources=[], i=1, len=arguments.length; i < len; i++) {sources.push(arguments[i]);}for(var idx=0, ln=sources.length; idx < ln; idx++) {var source=sources[idx];for(var prop in source) {obj[prop] = source[prop];}}};var addRef=Rx.internals.addRef = function(xs, r){return new AnonymousObservable(function(observer){return new CompositeDisposable(r.getDisposable(), xs.subscribe(observer));});};function arrayInitialize(count, factory){var a=new Array(count);for(var i=0; i < count; i++) {a[i] = factory();}return a;}var errorObj={e:{}};var tryCatchTarget;function tryCatcher(){try{return tryCatchTarget.apply(this, arguments);}catch(e) {errorObj.e = e;return errorObj;}}function tryCatch(fn){if(!isFunction(fn)){throw new TypeError('fn must be a function');}tryCatchTarget = fn;return tryCatcher;}function thrower(e){throw e;}function IndexedItem(id, value){this.id = id;this.value = value;}IndexedItem.prototype.compareTo = function(other){var c=this.value.compareTo(other.value);c === 0 && (c = this.id - other.id);return c;};var PriorityQueue=Rx.internals.PriorityQueue = function(capacity){this.items = new Array(capacity);this.length = 0;};var priorityProto=PriorityQueue.prototype;priorityProto.isHigherPriority = function(left, right){return this.items[left].compareTo(this.items[right]) < 0;};priorityProto.percolate = function(index){if(index >= this.length || index < 0){return;}var parent=index - 1 >> 1;if(parent < 0 || parent === index){return;}if(this.isHigherPriority(index, parent)){var temp=this.items[index];this.items[index] = this.items[parent];this.items[parent] = temp;this.percolate(parent);}};priorityProto.heapify = function(index){+index || (index = 0);if(index >= this.length || index < 0){return;}var left=2 * index + 1, right=2 * index + 2, first=index;if(left < this.length && this.isHigherPriority(left, first)){first = left;}if(right < this.length && this.isHigherPriority(right, first)){first = right;}if(first !== index){var temp=this.items[index];this.items[index] = this.items[first];this.items[first] = temp;this.heapify(first);}};priorityProto.peek = function(){return this.items[0].value;};priorityProto.removeAt = function(index){this.items[index] = this.items[--this.length];this.items[this.length] = undefined;this.heapify();};priorityProto.dequeue = function(){var result=this.peek();this.removeAt(0);return result;};priorityProto.enqueue = function(item){var index=this.length++;this.items[index] = new IndexedItem(PriorityQueue.count++, item);this.percolate(index);};priorityProto.remove = function(item){for(var i=0; i < this.length; i++) {if(this.items[i].value === item){this.removeAt(i);return true;}}return false;};PriorityQueue.count = 0;var CompositeDisposable=Rx.CompositeDisposable = function(){var args=[], i, len;if(Array.isArray(arguments[0])){args = arguments[0];len = args.length;}else {len = arguments.length;args = new Array(len);for(i = 0; i < len; i++) {args[i] = arguments[i];}}for(i = 0; i < len; i++) {if(!isDisposable(args[i])){throw new TypeError('Not a disposable');}}this.disposables = args;this.isDisposed = false;this.length = args.length;};var CompositeDisposablePrototype=CompositeDisposable.prototype;CompositeDisposablePrototype.add = function(item){if(this.isDisposed){item.dispose();}else {this.disposables.push(item);this.length++;}};CompositeDisposablePrototype.remove = function(item){var shouldDispose=false;if(!this.isDisposed){var idx=this.disposables.indexOf(item);if(idx !== -1){shouldDispose = true;this.disposables.splice(idx, 1);this.length--;item.dispose();}}return shouldDispose;};CompositeDisposablePrototype.dispose = function(){if(!this.isDisposed){this.isDisposed = true;var len=this.disposables.length, currentDisposables=new Array(len);for(var i=0; i < len; i++) {currentDisposables[i] = this.disposables[i];}this.disposables = [];this.length = 0;for(i = 0; i < len; i++) {currentDisposables[i].dispose();}}};var Disposable=Rx.Disposable = function(action){this.isDisposed = false;this.action = action || noop;};Disposable.prototype.dispose = function(){if(!this.isDisposed){this.action();this.isDisposed = true;}};var disposableCreate=Disposable.create = function(action){return new Disposable(action);};var disposableEmpty=Disposable.empty = {dispose:noop};var isDisposable=Disposable.isDisposable = function(d){return d && isFunction(d.dispose);};var checkDisposed=Disposable.checkDisposed = function(disposable){if(disposable.isDisposed){throw new ObjectDisposedError();}};var SingleAssignmentDisposable=Rx.SingleAssignmentDisposable = function(){this.isDisposed = false;this.current = null;};SingleAssignmentDisposable.prototype.getDisposable = function(){return this.current;};SingleAssignmentDisposable.prototype.setDisposable = function(value){if(this.current){throw new Error('Disposable has already been assigned');}var shouldDispose=this.isDisposed;!shouldDispose && (this.current = value);shouldDispose && value && value.dispose();};SingleAssignmentDisposable.prototype.dispose = function(){if(!this.isDisposed){this.isDisposed = true;var old=this.current;this.current = null;}old && old.dispose();};var SerialDisposable=Rx.SerialDisposable = function(){this.isDisposed = false;this.current = null;};SerialDisposable.prototype.getDisposable = function(){return this.current;};SerialDisposable.prototype.setDisposable = function(value){var shouldDispose=this.isDisposed;if(!shouldDispose){var old=this.current;this.current = value;}old && old.dispose();shouldDispose && value && value.dispose();};SerialDisposable.prototype.dispose = function(){if(!this.isDisposed){this.isDisposed = true;var old=this.current;this.current = null;}old && old.dispose();};var RefCountDisposable=Rx.RefCountDisposable = (function(){function InnerDisposable(disposable){this.disposable = disposable;this.disposable.count++;this.isInnerDisposed = false;}InnerDisposable.prototype.dispose = function(){if(!this.disposable.isDisposed && !this.isInnerDisposed){this.isInnerDisposed = true;this.disposable.count--;if(this.disposable.count === 0 && this.disposable.isPrimaryDisposed){this.disposable.isDisposed = true;this.disposable.underlyingDisposable.dispose();}}};function RefCountDisposable(disposable){this.underlyingDisposable = disposable;this.isDisposed = false;this.isPrimaryDisposed = false;this.count = 0;}RefCountDisposable.prototype.dispose = function(){if(!this.isDisposed && !this.isPrimaryDisposed){this.isPrimaryDisposed = true;if(this.count === 0){this.isDisposed = true;this.underlyingDisposable.dispose();}}};RefCountDisposable.prototype.getDisposable = function(){return this.isDisposed?disposableEmpty:new InnerDisposable(this);};return RefCountDisposable;})();function ScheduledDisposable(scheduler, disposable){this.scheduler = scheduler;this.disposable = disposable;this.isDisposed = false;}function scheduleItem(s, self){if(!self.isDisposed){self.isDisposed = true;self.disposable.dispose();}}ScheduledDisposable.prototype.dispose = function(){this.scheduler.scheduleWithState(this, scheduleItem);};var ScheduledItem=Rx.internals.ScheduledItem = function(scheduler, state, action, dueTime, comparer){this.scheduler = scheduler;this.state = state;this.action = action;this.dueTime = dueTime;this.comparer = comparer || defaultSubComparer;this.disposable = new SingleAssignmentDisposable();};ScheduledItem.prototype.invoke = function(){this.disposable.setDisposable(this.invokeCore());};ScheduledItem.prototype.compareTo = function(other){return this.comparer(this.dueTime, other.dueTime);};ScheduledItem.prototype.isCancelled = function(){return this.disposable.isDisposed;};ScheduledItem.prototype.invokeCore = function(){return this.action(this.scheduler, this.state);};var Scheduler=Rx.Scheduler = (function(){function Scheduler(now, schedule, scheduleRelative, scheduleAbsolute){this.now = now;this._schedule = schedule;this._scheduleRelative = scheduleRelative;this._scheduleAbsolute = scheduleAbsolute;}Scheduler.isScheduler = function(s){return s instanceof Scheduler;};function invokeAction(scheduler, action){action();return disposableEmpty;}var schedulerProto=Scheduler.prototype;schedulerProto.schedule = function(action){return this._schedule(action, invokeAction);};schedulerProto.scheduleWithState = function(state, action){return this._schedule(state, action);};schedulerProto.scheduleWithRelative = function(dueTime, action){return this._scheduleRelative(action, dueTime, invokeAction);};schedulerProto.scheduleWithRelativeAndState = function(state, dueTime, action){return this._scheduleRelative(state, dueTime, action);};schedulerProto.scheduleWithAbsolute = function(dueTime, action){return this._scheduleAbsolute(action, dueTime, invokeAction);};schedulerProto.scheduleWithAbsoluteAndState = function(state, dueTime, action){return this._scheduleAbsolute(state, dueTime, action);};Scheduler.now = defaultNow;Scheduler.normalize = function(timeSpan){timeSpan < 0 && (timeSpan = 0);return timeSpan;};return Scheduler;})();var normalizeTime=Scheduler.normalize, isScheduler=Scheduler.isScheduler;(function(schedulerProto){function invokeRecImmediate(scheduler, pair){var state=pair[0], action=pair[1], group=new CompositeDisposable();function recursiveAction(state1){action(state1, function(state2){var isAdded=false, isDone=false, d=scheduler.scheduleWithState(state2, function(scheduler1, state3){if(isAdded){group.remove(d);}else {isDone = true;}recursiveAction(state3);return disposableEmpty;});if(!isDone){group.add(d);isAdded = true;}});}recursiveAction(state);return group;}function invokeRecDate(scheduler, pair, method){var state=pair[0], action=pair[1], group=new CompositeDisposable();function recursiveAction(state1){action(state1, function(state2, dueTime1){var isAdded=false, isDone=false, d=scheduler[method](state2, dueTime1, function(scheduler1, state3){if(isAdded){group.remove(d);}else {isDone = true;}recursiveAction(state3);return disposableEmpty;});if(!isDone){group.add(d);isAdded = true;}});};recursiveAction(state);return group;}function scheduleInnerRecursive(action, self){action(function(dt){self(action, dt);});}schedulerProto.scheduleRecursive = function(action){return this.scheduleRecursiveWithState(action, function(_action, self){_action(function(){self(_action);});});};schedulerProto.scheduleRecursiveWithState = function(state, action){return this.scheduleWithState([state, action], invokeRecImmediate);};schedulerProto.scheduleRecursiveWithRelative = function(dueTime, action){return this.scheduleRecursiveWithRelativeAndState(action, dueTime, scheduleInnerRecursive);};schedulerProto.scheduleRecursiveWithRelativeAndState = function(state, dueTime, action){return this._scheduleRelative([state, action], dueTime, function(s, p){return invokeRecDate(s, p, 'scheduleWithRelativeAndState');});};schedulerProto.scheduleRecursiveWithAbsolute = function(dueTime, action){return this.scheduleRecursiveWithAbsoluteAndState(action, dueTime, scheduleInnerRecursive);};schedulerProto.scheduleRecursiveWithAbsoluteAndState = function(state, dueTime, action){return this._scheduleAbsolute([state, action], dueTime, function(s, p){return invokeRecDate(s, p, 'scheduleWithAbsoluteAndState');});};})(Scheduler.prototype);(function(schedulerProto){Scheduler.prototype.schedulePeriodic = function(period, action){return this.schedulePeriodicWithState(null, period, action);};Scheduler.prototype.schedulePeriodicWithState = function(state, period, action){if(typeof root.setInterval === 'undefined'){throw new NotSupportedError();}period = normalizeTime(period);var s=state, id=root.setInterval(function(){s = action(s);}, period);return disposableCreate(function(){root.clearInterval(id);});};})(Scheduler.prototype);(function(schedulerProto){schedulerProto.catchError = schedulerProto['catch'] = function(handler){return new CatchScheduler(this, handler);};})(Scheduler.prototype);var SchedulePeriodicRecursive=Rx.internals.SchedulePeriodicRecursive = (function(){function tick(command, recurse){recurse(0, this._period);try{this._state = this._action(this._state);}catch(e) {this._cancel.dispose();throw e;}}function SchedulePeriodicRecursive(scheduler, state, period, action){this._scheduler = scheduler;this._state = state;this._period = period;this._action = action;}SchedulePeriodicRecursive.prototype.start = function(){var d=new SingleAssignmentDisposable();this._cancel = d;d.setDisposable(this._scheduler.scheduleRecursiveWithRelativeAndState(0, this._period, tick.bind(this)));return d;};return SchedulePeriodicRecursive;})();var immediateScheduler=Scheduler.immediate = (function(){function scheduleNow(state, action){return action(this, state);}return new Scheduler(defaultNow, scheduleNow, notSupported, notSupported);})();var currentThreadScheduler=Scheduler.currentThread = (function(){var queue;function runTrampoline(){while(queue.length > 0) {var item=queue.dequeue();!item.isCancelled() && item.invoke();}}function scheduleNow(state, action){var si=new ScheduledItem(this, state, action, this.now());if(!queue){queue = new PriorityQueue(4);queue.enqueue(si);var result=tryCatch(runTrampoline)();queue = null;if(result === errorObj){return thrower(result.e);}}else {queue.enqueue(si);}return si.disposable;}var currentScheduler=new Scheduler(defaultNow, scheduleNow, notSupported, notSupported);currentScheduler.scheduleRequired = function(){return !queue;};return currentScheduler;})();var scheduleMethod, clearMethod;var localTimer=(function(){var localSetTimeout, localClearTimeout=noop;if(!!root.setTimeout){localSetTimeout = root.setTimeout;localClearTimeout = root.clearTimeout;}else if(!!root.WScript){localSetTimeout = function(fn, time){root.WScript.Sleep(time);fn();};}else {throw new NotSupportedError();}return {setTimeout:localSetTimeout, clearTimeout:localClearTimeout};})();var localSetTimeout=localTimer.setTimeout, localClearTimeout=localTimer.clearTimeout;(function(){var nextHandle=1, tasksByHandle={}, currentlyRunning=false;clearMethod = function(handle){delete tasksByHandle[handle];};function runTask(handle){if(currentlyRunning){localSetTimeout(function(){runTask(handle);}, 0);}else {var task=tasksByHandle[handle];if(task){currentlyRunning = true;var result=tryCatch(task)();clearMethod(handle);currentlyRunning = false;if(result === errorObj){return thrower(result.e);}}}}var reNative=RegExp('^' + String(toString).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/toString| for [^\]]+/g, '.*?') + '$');var setImmediate=typeof (setImmediate = freeGlobal && moduleExports && freeGlobal.setImmediate) == 'function' && !reNative.test(setImmediate) && setImmediate;function postMessageSupported(){if(!root.postMessage || root.importScripts){return false;}var isAsync=false, oldHandler=root.onmessage;root.onmessage = function(){isAsync = true;};root.postMessage('', '*');root.onmessage = oldHandler;return isAsync;}if(isFunction(setImmediate)){scheduleMethod = function(action){var id=nextHandle++;tasksByHandle[id] = action;setImmediate(function(){runTask(id);});return id;};}else if(typeof process !== 'undefined' && ({}).toString.call(process) === '[object process]'){scheduleMethod = function(action){var id=nextHandle++;tasksByHandle[id] = action;process.nextTick(function(){runTask(id);});return id;};}else if(postMessageSupported()){var onGlobalPostMessage=function(event){if(typeof event.data === 'string' && event.data.substring(0, MSG_PREFIX.length) === MSG_PREFIX){runTask(event.data.substring(MSG_PREFIX.length));}};var MSG_PREFIX='ms.rx.schedule' + Math.random();if(root.addEventListener){root.addEventListener('message', onGlobalPostMessage, false);}else if(root.attachEvent){root.attachEvent('onmessage', onGlobalPostMessage);}else {root.onmessage = onGlobalPostMessage;}scheduleMethod = function(action){var id=nextHandle++;tasksByHandle[id] = action;root.postMessage(MSG_PREFIX + currentId, '*');return id;};}else if(!!root.MessageChannel){var channel=new root.MessageChannel();channel.port1.onmessage = function(e){runTask(e.data);};scheduleMethod = function(action){var id=nextHandle++;tasksByHandle[id] = action;channel.port2.postMessage(id);return id;};}else if('document' in root && 'onreadystatechange' in root.document.createElement('script')){scheduleMethod = function(action){var scriptElement=root.document.createElement('script');var id=nextHandle++;tasksByHandle[id] = action;scriptElement.onreadystatechange = function(){runTask(id);scriptElement.onreadystatechange = null;scriptElement.parentNode.removeChild(scriptElement);scriptElement = null;};root.document.documentElement.appendChild(scriptElement);return id;};}else {scheduleMethod = function(action){var id=nextHandle++;tasksByHandle[id] = action;localSetTimeout(function(){runTask(id);}, 0);return id;};}})();var timeoutScheduler=Scheduler.timeout = Scheduler['default'] = (function(){function scheduleNow(state, action){var scheduler=this, disposable=new SingleAssignmentDisposable();var id=scheduleMethod(function(){!disposable.isDisposed && disposable.setDisposable(action(scheduler, state));});return new CompositeDisposable(disposable, disposableCreate(function(){clearMethod(id);}));}function scheduleRelative(state, dueTime, action){var scheduler=this, dt=Scheduler.normalize(dueTime), disposable=new SingleAssignmentDisposable();if(dt === 0){return scheduler.scheduleWithState(state, action);}var id=localSetTimeout(function(){!disposable.isDisposed && disposable.setDisposable(action(scheduler, state));}, dt);return new CompositeDisposable(disposable, disposableCreate(function(){localClearTimeout(id);}));}function scheduleAbsolute(state, dueTime, action){return this.scheduleWithRelativeAndState(state, dueTime - this.now(), action);}return new Scheduler(defaultNow, scheduleNow, scheduleRelative, scheduleAbsolute);})();var CatchScheduler=(function(__super__){function scheduleNow(state, action){return this._scheduler.scheduleWithState(state, this._wrap(action));}function scheduleRelative(state, dueTime, action){return this._scheduler.scheduleWithRelativeAndState(state, dueTime, this._wrap(action));}function scheduleAbsolute(state, dueTime, action){return this._scheduler.scheduleWithAbsoluteAndState(state, dueTime, this._wrap(action));}inherits(CatchScheduler, __super__);function CatchScheduler(scheduler, handler){this._scheduler = scheduler;this._handler = handler;this._recursiveOriginal = null;this._recursiveWrapper = null;__super__.call(this, this._scheduler.now.bind(this._scheduler), scheduleNow, scheduleRelative, scheduleAbsolute);}CatchScheduler.prototype._clone = function(scheduler){return new CatchScheduler(scheduler, this._handler);};CatchScheduler.prototype._wrap = function(action){var parent=this;return function(self, state){try{return action(parent._getRecursiveWrapper(self), state);}catch(e) {if(!parent._handler(e)){throw e;}return disposableEmpty;}};};CatchScheduler.prototype._getRecursiveWrapper = function(scheduler){if(this._recursiveOriginal !== scheduler){this._recursiveOriginal = scheduler;var wrapper=this._clone(scheduler);wrapper._recursiveOriginal = scheduler;wrapper._recursiveWrapper = wrapper;this._recursiveWrapper = wrapper;}return this._recursiveWrapper;};CatchScheduler.prototype.schedulePeriodicWithState = function(state, period, action){var self=this, failed=false, d=new SingleAssignmentDisposable();d.setDisposable(this._scheduler.schedulePeriodicWithState(state, period, function(state1){if(failed){return null;}try{return action(state1);}catch(e) {failed = true;if(!self._handler(e)){throw e;}d.dispose();return null;}}));return d;};return CatchScheduler;})(Scheduler);var Notification=Rx.Notification = (function(){function Notification(kind, value, exception, accept, acceptObservable, toString){this.kind = kind;this.value = value;this.exception = exception;this._accept = accept;this._acceptObservable = acceptObservable;this.toString = toString;}Notification.prototype.accept = function(observerOrOnNext, onError, onCompleted){return observerOrOnNext && typeof observerOrOnNext === 'object'?this._acceptObservable(observerOrOnNext):this._accept(observerOrOnNext, onError, onCompleted);};Notification.prototype.toObservable = function(scheduler){var self=this;isScheduler(scheduler) || (scheduler = immediateScheduler);return new AnonymousObservable(function(observer){return scheduler.scheduleWithState(self, function(_, notification){notification._acceptObservable(observer);notification.kind === 'N' && observer.onCompleted();});});};return Notification;})();var notificationCreateOnNext=Notification.createOnNext = (function(){function _accept(onNext){return onNext(this.value);}function _acceptObservable(observer){return observer.onNext(this.value);}function toString(){return 'OnNext(' + this.value + ')';}return function(value){return new Notification('N', value, null, _accept, _acceptObservable, toString);};})();var notificationCreateOnError=Notification.createOnError = (function(){function _accept(onNext, onError){return onError(this.exception);}function _acceptObservable(observer){return observer.onError(this.exception);}function toString(){return 'OnError(' + this.exception + ')';}return function(e){return new Notification('E', null, e, _accept, _acceptObservable, toString);};})();var notificationCreateOnCompleted=Notification.createOnCompleted = (function(){function _accept(onNext, onError, onCompleted){return onCompleted();}function _acceptObservable(observer){return observer.onCompleted();}function toString(){return 'OnCompleted()';}return function(){return new Notification('C', null, null, _accept, _acceptObservable, toString);};})();var Enumerator=Rx.internals.Enumerator = function(next){this._next = next;};Enumerator.prototype.next = function(){return this._next();};Enumerator.prototype[$iterator$] = function(){return this;};var Enumerable=Rx.internals.Enumerable = function(iterator){this._iterator = iterator;};Enumerable.prototype[$iterator$] = function(){return this._iterator();};Enumerable.prototype.concat = function(){var sources=this;return new AnonymousObservable(function(o){var e=sources[$iterator$]();var isDisposed, subscription=new SerialDisposable();var cancelable=immediateScheduler.scheduleRecursive(function(self){if(isDisposed){return;}try{var currentItem=e.next();}catch(ex) {return o.onError(ex);}if(currentItem.done){return o.onCompleted();}var currentValue=currentItem.value;isPromise(currentValue) && (currentValue = observableFromPromise(currentValue));var d=new SingleAssignmentDisposable();subscription.setDisposable(d);d.setDisposable(currentValue.subscribe(function(x){o.onNext(x);}, function(err){o.onError(err);}, self));});return new CompositeDisposable(subscription, cancelable, disposableCreate(function(){isDisposed = true;}));});};Enumerable.prototype.catchError = function(){var sources=this;return new AnonymousObservable(function(o){var e=sources[$iterator$]();var isDisposed, subscription=new SerialDisposable();var cancelable=immediateScheduler.scheduleRecursiveWithState(null, function(lastException, self){if(isDisposed){return;}try{var currentItem=e.next();}catch(ex) {return observer.onError(ex);}if(currentItem.done){if(lastException !== null){o.onError(lastException);}else {o.onCompleted();}return;}var currentValue=currentItem.value;isPromise(currentValue) && (currentValue = observableFromPromise(currentValue));var d=new SingleAssignmentDisposable();subscription.setDisposable(d);d.setDisposable(currentValue.subscribe(function(x){o.onNext(x);}, self, function(){o.onCompleted();}));});return new CompositeDisposable(subscription, cancelable, disposableCreate(function(){isDisposed = true;}));});};Enumerable.prototype.catchErrorWhen = function(notificationHandler){var sources=this;return new AnonymousObservable(function(o){var exceptions=new Subject(), notifier=new Subject(), handled=notificationHandler(exceptions), notificationDisposable=handled.subscribe(notifier);var e=sources[$iterator$]();var isDisposed, lastException, subscription=new SerialDisposable();var cancelable=immediateScheduler.scheduleRecursive(function(self){if(isDisposed){return;}try{var currentItem=e.next();}catch(ex) {return o.onError(ex);}if(currentItem.done){if(lastException){o.onError(lastException);}else {o.onCompleted();}return;}var currentValue=currentItem.value;isPromise(currentValue) && (currentValue = observableFromPromise(currentValue));var outer=new SingleAssignmentDisposable();var inner=new SingleAssignmentDisposable();subscription.setDisposable(new CompositeDisposable(inner, outer));outer.setDisposable(currentValue.subscribe(function(x){o.onNext(x);}, function(exn){inner.setDisposable(notifier.subscribe(self, function(ex){o.onError(ex);}, function(){o.onCompleted();}));exceptions.onNext(exn);}, function(){o.onCompleted();}));});return new CompositeDisposable(notificationDisposable, subscription, cancelable, disposableCreate(function(){isDisposed = true;}));});};var enumerableRepeat=Enumerable.repeat = function(value, repeatCount){if(repeatCount == null){repeatCount = -1;}return new Enumerable(function(){var left=repeatCount;return new Enumerator(function(){if(left === 0){return doneEnumerator;}if(left > 0){left--;}return {done:false, value:value};});});};var enumerableOf=Enumerable.of = function(source, selector, thisArg){if(selector){var selectorFn=bindCallback(selector, thisArg, 3);}return new Enumerable(function(){var index=-1;return new Enumerator(function(){return ++index < source.length?{done:false, value:!selector?source[index]:selectorFn(source[index], index, source)}:doneEnumerator;});});};var Observer=Rx.Observer = function(){};Observer.prototype.toNotifier = function(){var observer=this;return function(n){return n.accept(observer);};};Observer.prototype.asObserver = function(){return new AnonymousObserver(this.onNext.bind(this), this.onError.bind(this), this.onCompleted.bind(this));};Observer.prototype.checked = function(){return new CheckedObserver(this);};var observerCreate=Observer.create = function(onNext, onError, onCompleted){onNext || (onNext = noop);onError || (onError = defaultError);onCompleted || (onCompleted = noop);return new AnonymousObserver(onNext, onError, onCompleted);};Observer.fromNotifier = function(handler, thisArg){return new AnonymousObserver(function(x){return handler.call(thisArg, notificationCreateOnNext(x));}, function(e){return handler.call(thisArg, notificationCreateOnError(e));}, function(){return handler.call(thisArg, notificationCreateOnCompleted());});};Observer.prototype.notifyOn = function(scheduler){return new ObserveOnObserver(scheduler, this);};Observer.prototype.makeSafe = function(disposable){return new AnonymousSafeObserver(this._onNext, this._onError, this._onCompleted, disposable);};var AbstractObserver=Rx.internals.AbstractObserver = (function(__super__){inherits(AbstractObserver, __super__);function AbstractObserver(){this.isStopped = false;__super__.call(this);}AbstractObserver.prototype.next = notImplemented;AbstractObserver.prototype.error = notImplemented;AbstractObserver.prototype.completed = notImplemented;AbstractObserver.prototype.onNext = function(value){if(!this.isStopped){this.next(value);}};AbstractObserver.prototype.onError = function(error){if(!this.isStopped){this.isStopped = true;this.error(error);}};AbstractObserver.prototype.onCompleted = function(){if(!this.isStopped){this.isStopped = true;this.completed();}};AbstractObserver.prototype.dispose = function(){this.isStopped = true;};AbstractObserver.prototype.fail = function(e){if(!this.isStopped){this.isStopped = true;this.error(e);return true;}return false;};return AbstractObserver;})(Observer);var AnonymousObserver=Rx.AnonymousObserver = (function(__super__){inherits(AnonymousObserver, __super__);function AnonymousObserver(onNext, onError, onCompleted){__super__.call(this);this._onNext = onNext;this._onError = onError;this._onCompleted = onCompleted;}AnonymousObserver.prototype.next = function(value){this._onNext(value);};AnonymousObserver.prototype.error = function(error){this._onError(error);};AnonymousObserver.prototype.completed = function(){this._onCompleted();};return AnonymousObserver;})(AbstractObserver);var CheckedObserver=(function(__super__){inherits(CheckedObserver, __super__);function CheckedObserver(observer){__super__.call(this);this._observer = observer;this._state = 0;}var CheckedObserverPrototype=CheckedObserver.prototype;CheckedObserverPrototype.onNext = function(value){this.checkAccess();var res=tryCatch(this._observer.onNext).call(this._observer, value);this._state = 0;res === errorObj && thrower(res.e);};CheckedObserverPrototype.onError = function(err){this.checkAccess();var res=tryCatch(this._observer.onError).call(this._observer, err);this._state = 2;res === errorObj && thrower(res.e);};CheckedObserverPrototype.onCompleted = function(){this.checkAccess();var res=tryCatch(this._observer.onCompleted).call(this._observer);this._state = 2;res === errorObj && thrower(res.e);};CheckedObserverPrototype.checkAccess = function(){if(this._state === 1){throw new Error('Re-entrancy detected');}if(this._state === 2){throw new Error('Observer completed');}if(this._state === 0){this._state = 1;}};return CheckedObserver;})(Observer);var ScheduledObserver=Rx.internals.ScheduledObserver = (function(__super__){inherits(ScheduledObserver, __super__);function ScheduledObserver(scheduler, observer){__super__.call(this);this.scheduler = scheduler;this.observer = observer;this.isAcquired = false;this.hasFaulted = false;this.queue = [];this.disposable = new SerialDisposable();}ScheduledObserver.prototype.next = function(value){var self=this;this.queue.push(function(){self.observer.onNext(value);});};ScheduledObserver.prototype.error = function(e){var self=this;this.queue.push(function(){self.observer.onError(e);});};ScheduledObserver.prototype.completed = function(){var self=this;this.queue.push(function(){self.observer.onCompleted();});};ScheduledObserver.prototype.ensureActive = function(){var isOwner=false, parent=this;if(!this.hasFaulted && this.queue.length > 0){isOwner = !this.isAcquired;this.isAcquired = true;}if(isOwner){this.disposable.setDisposable(this.scheduler.scheduleRecursive(function(self){var work;if(parent.queue.length > 0){work = parent.queue.shift();}else {parent.isAcquired = false;return;}try{work();}catch(ex) {parent.queue = [];parent.hasFaulted = true;throw ex;}self();}));}};ScheduledObserver.prototype.dispose = function(){__super__.prototype.dispose.call(this);this.disposable.dispose();};return ScheduledObserver;})(AbstractObserver);var ObserveOnObserver=(function(__super__){inherits(ObserveOnObserver, __super__);function ObserveOnObserver(scheduler, observer, cancel){__super__.call(this, scheduler, observer);this._cancel = cancel;}ObserveOnObserver.prototype.next = function(value){__super__.prototype.next.call(this, value);this.ensureActive();};ObserveOnObserver.prototype.error = function(e){__super__.prototype.error.call(this, e);this.ensureActive();};ObserveOnObserver.prototype.completed = function(){__super__.prototype.completed.call(this);this.ensureActive();};ObserveOnObserver.prototype.dispose = function(){__super__.prototype.dispose.call(this);this._cancel && this._cancel.dispose();this._cancel = null;};return ObserveOnObserver;})(ScheduledObserver);var observableProto;var Observable=Rx.Observable = (function(){function Observable(subscribe){if(Rx.config.longStackSupport && hasStacks){try{throw new Error();}catch(e) {this.stack = e.stack.substring(e.stack.indexOf('\n') + 1);}var self=this;this._subscribe = function(observer){var oldOnError=observer.onError.bind(observer);observer.onError = function(err){makeStackTraceLong(err, self);oldOnError(err);};return subscribe.call(self, observer);};}else {this._subscribe = subscribe;}}observableProto = Observable.prototype;observableProto.subscribe = observableProto.forEach = function(observerOrOnNext, onError, onCompleted){return this._subscribe(typeof observerOrOnNext === 'object'?observerOrOnNext:observerCreate(observerOrOnNext, onError, onCompleted));};observableProto.subscribeOnNext = function(onNext, thisArg){return this._subscribe(observerCreate(typeof thisArg !== 'undefined'?function(x){onNext.call(thisArg, x);}:onNext));};observableProto.subscribeOnError = function(onError, thisArg){return this._subscribe(observerCreate(null, typeof thisArg !== 'undefined'?function(e){onError.call(thisArg, e);}:onError));};observableProto.subscribeOnCompleted = function(onCompleted, thisArg){return this._subscribe(observerCreate(null, null, typeof thisArg !== 'undefined'?function(){onCompleted.call(thisArg);}:onCompleted));};return Observable;})();var ObservableBase=Rx.ObservableBase = (function(__super__){inherits(ObservableBase, __super__);function fixSubscriber(subscriber){return subscriber && isFunction(subscriber.dispose)?subscriber:isFunction(subscriber)?disposableCreate(subscriber):disposableEmpty;}function setDisposable(s, state){var ado=state[0], self=state[1];var sub=tryCatch(self.subscribeCore).call(self, ado);if(sub === errorObj){if(!ado.fail(errorObj.e)){return thrower(errorObj.e);}}ado.setDisposable(fixSubscriber(sub));}function subscribe(observer){var ado=new AutoDetachObserver(observer), state=[ado, this];if(currentThreadScheduler.scheduleRequired()){currentThreadScheduler.scheduleWithState(state, setDisposable);}else {setDisposable(null, state);}return ado;}function ObservableBase(){__super__.call(this, subscribe);}ObservableBase.prototype.subscribeCore = notImplemented;return ObservableBase;})(Observable);observableProto.observeOn = function(scheduler){var source=this;return new AnonymousObservable(function(observer){return source.subscribe(new ObserveOnObserver(scheduler, observer));}, source);};observableProto.subscribeOn = function(scheduler){var source=this;return new AnonymousObservable(function(observer){var m=new SingleAssignmentDisposable(), d=new SerialDisposable();d.setDisposable(m);m.setDisposable(scheduler.schedule(function(){d.setDisposable(new ScheduledDisposable(scheduler, source.subscribe(observer)));}));return d;}, source);};var observableFromPromise=Observable.fromPromise = function(promise){return observableDefer(function(){var subject=new Rx.AsyncSubject();promise.then(function(value){subject.onNext(value);subject.onCompleted();}, subject.onError.bind(subject));return subject;});};observableProto.toPromise = function(promiseCtor){promiseCtor || (promiseCtor = Rx.config.Promise);if(!promiseCtor){throw new NotSupportedError('Promise type not provided nor in Rx.config.Promise');}var source=this;return new promiseCtor(function(resolve, reject){var value, hasValue=false;source.subscribe(function(v){value = v;hasValue = true;}, reject, function(){hasValue && resolve(value);});});};var ToArrayObservable=(function(__super__){inherits(ToArrayObservable, __super__);function ToArrayObservable(source){this.source = source;__super__.call(this);}ToArrayObservable.prototype.subscribeCore = function(observer){return this.source.subscribe(new ToArrayObserver(observer));};return ToArrayObservable;})(ObservableBase);function ToArrayObserver(observer){this.observer = observer;this.a = [];this.isStopped = false;}ToArrayObserver.prototype.onNext = function(x){if(!this.isStopped){this.a.push(x);}};ToArrayObserver.prototype.onError = function(e){if(!this.isStopped){this.isStopped = true;this.observer.onError(e);}};ToArrayObserver.prototype.onCompleted = function(){if(!this.isStopped){this.isStopped = true;this.observer.onNext(this.a);this.observer.onCompleted();}};ToArrayObserver.prototype.dispose = function(){this.isStopped = true;};ToArrayObserver.prototype.fail = function(e){if(!this.isStopped){this.isStopped = true;this.observer.onError(e);return true;}return false;};observableProto.toArray = function(){return new ToArrayObservable(this);};Observable.create = Observable.createWithDisposable = function(subscribe, parent){return new AnonymousObservable(subscribe, parent);};var observableDefer=Observable.defer = function(observableFactory){return new AnonymousObservable(function(observer){var result;try{result = observableFactory();}catch(e) {return observableThrow(e).subscribe(observer);}isPromise(result) && (result = observableFromPromise(result));return result.subscribe(observer);});};var EmptyObservable=(function(__super__){inherits(EmptyObservable, __super__);function EmptyObservable(scheduler){this.scheduler = scheduler;__super__.call(this);}EmptyObservable.prototype.subscribeCore = function(observer){var sink=new EmptySink(observer, this);return sink.run();};function EmptySink(observer, parent){this.observer = observer;this.parent = parent;}function scheduleItem(s, state){state.onCompleted();}EmptySink.prototype.run = function(){return this.parent.scheduler.scheduleWithState(this.observer, scheduleItem);};return EmptyObservable;})(ObservableBase);var observableEmpty=Observable.empty = function(scheduler){isScheduler(scheduler) || (scheduler = immediateScheduler);return new EmptyObservable(scheduler);};var FromObservable=(function(__super__){inherits(FromObservable, __super__);function FromObservable(iterable, mapper, scheduler){this.iterable = iterable;this.mapper = mapper;this.scheduler = scheduler;__super__.call(this);}FromObservable.prototype.subscribeCore = function(observer){var sink=new FromSink(observer, this);return sink.run();};return FromObservable;})(ObservableBase);var FromSink=(function(){function FromSink(observer, parent){this.observer = observer;this.parent = parent;}FromSink.prototype.run = function(){var list=Object(this.parent.iterable), it=getIterable(list), observer=this.observer, mapper=this.parent.mapper;function loopRecursive(i, recurse){try{var next=it.next();}catch(e) {return observer.onError(e);}if(next.done){return observer.onCompleted();}var result=next.value;if(mapper){try{result = mapper(result, i);}catch(e) {return observer.onError(e);}}observer.onNext(result);recurse(i + 1);}return this.parent.scheduler.scheduleRecursiveWithState(0, loopRecursive);};return FromSink;})();var maxSafeInteger=Math.pow(2, 53) - 1;function StringIterable(str){this._s = s;}StringIterable.prototype[$iterator$] = function(){return new StringIterator(this._s);};function StringIterator(str){this._s = s;this._l = s.length;this._i = 0;}StringIterator.prototype[$iterator$] = function(){return this;};StringIterator.prototype.next = function(){return this._i < this._l?{done:false, value:this._s.charAt(this._i++)}:doneEnumerator;};function ArrayIterable(a){this._a = a;}ArrayIterable.prototype[$iterator$] = function(){return new ArrayIterator(this._a);};function ArrayIterator(a){this._a = a;this._l = toLength(a);this._i = 0;}ArrayIterator.prototype[$iterator$] = function(){return this;};ArrayIterator.prototype.next = function(){return this._i < this._l?{done:false, value:this._a[this._i++]}:doneEnumerator;};function numberIsFinite(value){return typeof value === 'number' && root.isFinite(value);}function isNan(n){return n !== n;}function getIterable(o){var i=o[$iterator$], it;if(!i && typeof o === 'string'){it = new StringIterable(o);return it[$iterator$]();}if(!i && o.length !== undefined){it = new ArrayIterable(o);return it[$iterator$]();}if(!i){throw new TypeError('Object is not iterable');}return o[$iterator$]();}function sign(value){var number=+value;if(number === 0){return number;}if(isNaN(number)){return number;}return number < 0?-1:1;}function toLength(o){var len=+o.length;if(isNaN(len)){return 0;}if(len === 0 || !numberIsFinite(len)){return len;}len = sign(len) * Math.floor(Math.abs(len));if(len <= 0){return 0;}if(len > maxSafeInteger){return maxSafeInteger;}return len;}var observableFrom=Observable.from = function(iterable, mapFn, thisArg, scheduler){if(iterable == null){throw new Error('iterable cannot be null.');}if(mapFn && !isFunction(mapFn)){throw new Error('mapFn when provided must be a function');}if(mapFn){var mapper=bindCallback(mapFn, thisArg, 2);}isScheduler(scheduler) || (scheduler = currentThreadScheduler);return new FromObservable(iterable, mapper, scheduler);};var FromArrayObservable=(function(__super__){inherits(FromArrayObservable, __super__);function FromArrayObservable(args, scheduler){this.args = args;this.scheduler = scheduler;__super__.call(this);}FromArrayObservable.prototype.subscribeCore = function(observer){var sink=new FromArraySink(observer, this);return sink.run();};return FromArrayObservable;})(ObservableBase);function FromArraySink(observer, parent){this.observer = observer;this.parent = parent;}FromArraySink.prototype.run = function(){var observer=this.observer, args=this.parent.args, len=args.length;function loopRecursive(i, recurse){if(i < len){observer.onNext(args[i]);recurse(i + 1);}else {observer.onCompleted();}}return this.parent.scheduler.scheduleRecursiveWithState(0, loopRecursive);};var observableFromArray=Observable.fromArray = function(array, scheduler){isScheduler(scheduler) || (scheduler = currentThreadScheduler);return new FromArrayObservable(array, scheduler);};Observable.generate = function(initialState, condition, iterate, resultSelector, scheduler){isScheduler(scheduler) || (scheduler = currentThreadScheduler);return new AnonymousObservable(function(o){var first=true;return scheduler.scheduleRecursiveWithState(initialState, function(state, self){var hasResult, result;try{if(first){first = false;}else {state = iterate(state);}hasResult = condition(state);hasResult && (result = resultSelector(state));}catch(e) {return o.onError(e);}if(hasResult){o.onNext(result);self(state);}else {o.onCompleted();}});});};function observableOf(scheduler, array){isScheduler(scheduler) || (scheduler = currentThreadScheduler);return new FromArrayObservable(array, scheduler);}Observable.of = function(){var len=arguments.length, args=new Array(len);for(var i=0; i < len; i++) {args[i] = arguments[i];}return new FromArrayObservable(args, currentThreadScheduler);};Observable.ofWithScheduler = function(scheduler){var len=arguments.length, args=new Array(len - 1);for(var i=1; i < len; i++) {args[i - 1] = arguments[i];}return new FromArrayObservable(args, scheduler);};Observable.ofArrayChanges = function(array){if(!Array.isArray(array)){throw new TypeError('Array.observe only accepts arrays.');}if(typeof Array.observe !== 'function' && typeof Array.unobserve !== 'function'){throw new TypeError('Array.observe is not supported on your platform');}return new AnonymousObservable(function(observer){function observerFn(changes){for(var i=0, len=changes.length; i < len; i++) {observer.onNext(changes[i]);}}Array.observe(array, observerFn);return function(){Array.unobserve(array, observerFn);};});};Observable.ofObjectChanges = function(obj){if(obj == null){throw new TypeError('object must not be null or undefined.');}if(typeof Object.observe !== 'function' && typeof Object.unobserve !== 'function'){throw new TypeError('Array.observe is not supported on your platform');}return new AnonymousObservable(function(observer){function observerFn(changes){for(var i=0, len=changes.length; i < len; i++) {observer.onNext(changes[i]);}}Object.observe(obj, observerFn);return function(){Object.unobserve(obj, observerFn);};});};var NeverObservable=(function(__super__){inherits(NeverObservable, __super__);function NeverObservable(){__super__.call(this);}NeverObservable.prototype.subscribeCore = function(observer){return disposableEmpty;};return NeverObservable;})(ObservableBase);var observableNever=Observable.never = function(){return new NeverObservable();};var PairsObservable=(function(__super__){inherits(PairsObservable, __super__);function PairsObservable(obj, scheduler){this.obj = obj;this.keys = Object.keys(obj);this.scheduler = scheduler;__super__.call(this);}PairsObservable.prototype.subscribeCore = function(observer){var sink=new PairsSink(observer, this);return sink.run();};return PairsObservable;})(ObservableBase);function PairsSink(observer, parent){this.observer = observer;this.parent = parent;}PairsSink.prototype.run = function(){var observer=this.observer, obj=this.parent.obj, keys=this.parent.keys, len=keys.length;function loopRecursive(i, recurse){if(i < len){var key=keys[i];observer.onNext([key, obj[key]]);recurse(i + 1);}else {observer.onCompleted();}}return this.parent.scheduler.scheduleRecursiveWithState(0, loopRecursive);};Observable.pairs = function(obj, scheduler){scheduler || (scheduler = currentThreadScheduler);return new PairsObservable(obj, scheduler);};var RangeObservable=(function(__super__){inherits(RangeObservable, __super__);function RangeObservable(start, count, scheduler){this.start = start;this.count = count;this.scheduler = scheduler;__super__.call(this);}RangeObservable.prototype.subscribeCore = function(observer){var sink=new RangeSink(observer, this);return sink.run();};return RangeObservable;})(ObservableBase);var RangeSink=(function(){function RangeSink(observer, parent){this.observer = observer;this.parent = parent;}RangeSink.prototype.run = function(){var start=this.parent.start, count=this.parent.count, observer=this.observer;function loopRecursive(i, recurse){if(i < count){observer.onNext(start + i);recurse(i + 1);}else {observer.onCompleted();}}return this.parent.scheduler.scheduleRecursiveWithState(0, loopRecursive);};return RangeSink;})();Observable.range = function(start, count, scheduler){isScheduler(scheduler) || (scheduler = currentThreadScheduler);return new RangeObservable(start, count, scheduler);};var RepeatObservable=(function(__super__){inherits(RepeatObservable, __super__);function RepeatObservable(value, repeatCount, scheduler){this.value = value;this.repeatCount = repeatCount == null?-1:repeatCount;this.scheduler = scheduler;__super__.call(this);}RepeatObservable.prototype.subscribeCore = function(observer){var sink=new RepeatSink(observer, this);return sink.run();};return RepeatObservable;})(ObservableBase);function RepeatSink(observer, parent){this.observer = observer;this.parent = parent;}RepeatSink.prototype.run = function(){var observer=this.observer, value=this.parent.value;function loopRecursive(i, recurse){if(i === -1 || i > 0){observer.onNext(value);i > 0 && i--;}if(i === 0){return observer.onCompleted();}recurse(i);}return this.parent.scheduler.scheduleRecursiveWithState(this.parent.repeatCount, loopRecursive);};Observable.repeat = function(value, repeatCount, scheduler){isScheduler(scheduler) || (scheduler = currentThreadScheduler);return new RepeatObservable(value, repeatCount, scheduler);};var JustObservable=(function(__super__){inherits(JustObservable, __super__);function JustObservable(value, scheduler){this.value = value;this.scheduler = scheduler;__super__.call(this);}JustObservable.prototype.subscribeCore = function(observer){var sink=new JustSink(observer, this);return sink.run();};function JustSink(observer, parent){this.observer = observer;this.parent = parent;}function scheduleItem(s, state){var value=state[0], observer=state[1];observer.onNext(value);observer.onCompleted();}JustSink.prototype.run = function(){return this.parent.scheduler.scheduleWithState([this.parent.value, this.observer], scheduleItem);};return JustObservable;})(ObservableBase);var observableReturn=Observable['return'] = Observable.just = Observable.returnValue = function(value, scheduler){isScheduler(scheduler) || (scheduler = immediateScheduler);return new JustObservable(value, scheduler);};var ThrowObservable=(function(__super__){inherits(ThrowObservable, __super__);function ThrowObservable(error, scheduler){this.error = error;this.scheduler = scheduler;__super__.call(this);}ThrowObservable.prototype.subscribeCore = function(observer){var sink=new ThrowSink(observer, this);return sink.run();};function ThrowSink(observer, parent){this.observer = observer;this.parent = parent;}function scheduleItem(s, state){var error=state[0], observer=state[1];observer.onError(error);}ThrowSink.prototype.run = function(){return this.parent.scheduler.scheduleWithState([this.parent.error, this.observer], scheduleItem);};return ThrowObservable;})(ObservableBase);var observableThrow=Observable['throw'] = Observable.throwError = Observable.throwException = function(error, scheduler){isScheduler(scheduler) || (scheduler = immediateScheduler);return new ThrowObservable(error, scheduler);};Observable.using = function(resourceFactory, observableFactory){return new AnonymousObservable(function(observer){var disposable=disposableEmpty, resource, source;try{resource = resourceFactory();resource && (disposable = resource);source = observableFactory(resource);}catch(exception) {return new CompositeDisposable(observableThrow(exception).subscribe(observer), disposable);}return new CompositeDisposable(source.subscribe(observer), disposable);});};observableProto.amb = function(rightSource){var leftSource=this;return new AnonymousObservable(function(observer){var choice, leftChoice='L', rightChoice='R', leftSubscription=new SingleAssignmentDisposable(), rightSubscription=new SingleAssignmentDisposable();isPromise(rightSource) && (rightSource = observableFromPromise(rightSource));function choiceL(){if(!choice){choice = leftChoice;rightSubscription.dispose();}}function choiceR(){if(!choice){choice = rightChoice;leftSubscription.dispose();}}leftSubscription.setDisposable(leftSource.subscribe(function(left){choiceL();if(choice === leftChoice){observer.onNext(left);}}, function(err){choiceL();if(choice === leftChoice){observer.onError(err);}}, function(){choiceL();if(choice === leftChoice){observer.onCompleted();}}));rightSubscription.setDisposable(rightSource.subscribe(function(right){choiceR();if(choice === rightChoice){observer.onNext(right);}}, function(err){choiceR();if(choice === rightChoice){observer.onError(err);}}, function(){choiceR();if(choice === rightChoice){observer.onCompleted();}}));return new CompositeDisposable(leftSubscription, rightSubscription);});};Observable.amb = function(){var acc=observableNever(), items=[];if(Array.isArray(arguments[0])){items = arguments[0];}else {for(var i=0, len=arguments.length; i < len; i++) {items.push(arguments[i]);}}function func(previous, current){return previous.amb(current);}for(var i=0, len=items.length; i < len; i++) {acc = func(acc, items[i]);}return acc;};function observableCatchHandler(source, handler){return new AnonymousObservable(function(o){var d1=new SingleAssignmentDisposable(), subscription=new SerialDisposable();subscription.setDisposable(d1);d1.setDisposable(source.subscribe(function(x){o.onNext(x);}, function(e){try{var result=handler(e);}catch(ex) {return o.onError(ex);}isPromise(result) && (result = observableFromPromise(result));var d=new SingleAssignmentDisposable();subscription.setDisposable(d);d.setDisposable(result.subscribe(o));}, function(x){o.onCompleted(x);}));return subscription;}, source);}observableProto['catch'] = observableProto.catchError = observableProto.catchException = function(handlerOrSecond){return typeof handlerOrSecond === 'function'?observableCatchHandler(this, handlerOrSecond):observableCatch([this, handlerOrSecond]);};var observableCatch=Observable.catchError = Observable['catch'] = Observable.catchException = function(){var items=[];if(Array.isArray(arguments[0])){items = arguments[0];}else {for(var i=0, len=arguments.length; i < len; i++) {items.push(arguments[i]);}}return enumerableOf(items).catchError();};observableProto.combineLatest = function(){var len=arguments.length, args=new Array(len);for(var i=0; i < len; i++) {args[i] = arguments[i];}if(Array.isArray(args[0])){args[0].unshift(this);}else {args.unshift(this);}return combineLatest.apply(this, args);};var combineLatest=Observable.combineLatest = function(){var len=arguments.length, args=new Array(len);for(var i=0; i < len; i++) {args[i] = arguments[i];}var resultSelector=args.pop();Array.isArray(args[0]) && (args = args[0]);return new AnonymousObservable(function(o){var n=args.length, falseFactory=function falseFactory(){return false;}, hasValue=arrayInitialize(n, falseFactory), hasValueAll=false, isDone=arrayInitialize(n, falseFactory), values=new Array(n);function next(i){hasValue[i] = true;if(hasValueAll || (hasValueAll = hasValue.every(identity))){try{var res=resultSelector.apply(null, values);}catch(e) {return o.onError(e);}o.onNext(res);}else if(isDone.filter(function(x, j){return j !== i;}).every(identity)){o.onCompleted();}}function done(i){isDone[i] = true;isDone.every(identity) && o.onCompleted();}var subscriptions=new Array(n);for(var idx=0; idx < n; idx++) {(function(i){var source=args[i], sad=new SingleAssignmentDisposable();isPromise(source) && (source = observableFromPromise(source));sad.setDisposable(source.subscribe(function(x){values[i] = x;next(i);}, function(e){o.onError(e);}, function(){done(i);}));subscriptions[i] = sad;})(idx);}return new CompositeDisposable(subscriptions);}, this);};observableProto.concat = function(){for(var args=[], i=0, len=arguments.length; i < len; i++) {args.push(arguments[i]);}args.unshift(this);return observableConcat.apply(null, args);};var observableConcat=Observable.concat = function(){var args;if(Array.isArray(arguments[0])){args = arguments[0];}else {args = new Array(arguments.length);for(var i=0, len=arguments.length; i < len; i++) {args[i] = arguments[i];}}return enumerableOf(args).concat();};observableProto.concatAll = observableProto.concatObservable = function(){return this.merge(1);};var MergeObservable=(function(__super__){inherits(MergeObservable, __super__);function MergeObservable(source, maxConcurrent){this.source = source;this.maxConcurrent = maxConcurrent;__super__.call(this);}MergeObservable.prototype.subscribeCore = function(observer){var g=new CompositeDisposable();g.add(this.source.subscribe(new MergeObserver(observer, this.maxConcurrent, g)));return g;};return MergeObservable;})(ObservableBase);var MergeObserver=(function(){function MergeObserver(o, max, g){this.o = o;this.max = max;this.g = g;this.done = false;this.q = [];this.activeCount = 0;this.isStopped = false;}MergeObserver.prototype.handleSubscribe = function(xs){var sad=new SingleAssignmentDisposable();this.g.add(sad);isPromise(xs) && (xs = observableFromPromise(xs));sad.setDisposable(xs.subscribe(new InnerObserver(this, sad)));};MergeObserver.prototype.onNext = function(innerSource){if(this.isStopped){return;}if(this.activeCount < this.max){this.activeCount++;this.handleSubscribe(innerSource);}else {this.q.push(innerSource);}};MergeObserver.prototype.onError = function(e){if(!this.isStopped){this.isStopped = true;this.o.onError(e);}};MergeObserver.prototype.onCompleted = function(){if(!this.isStopped){this.isStopped = true;this.done = true;this.activeCount === 0 && this.o.onCompleted();}};MergeObserver.prototype.dispose = function(){this.isStopped = true;};MergeObserver.prototype.fail = function(e){if(!this.isStopped){this.isStopped = true;this.o.onError(e);return true;}return false;};function InnerObserver(parent, sad){this.parent = parent;this.sad = sad;this.isStopped = false;}InnerObserver.prototype.onNext = function(x){if(!this.isStopped){this.parent.o.onNext(x);}};InnerObserver.prototype.onError = function(e){if(!this.isStopped){this.isStopped = true;this.parent.o.onError(e);}};InnerObserver.prototype.onCompleted = function(){if(!this.isStopped){this.isStopped = true;var parent=this.parent;parent.g.remove(this.sad);if(parent.q.length > 0){parent.handleSubscribe(parent.q.shift());}else {parent.activeCount--;parent.done && parent.activeCount === 0 && parent.o.onCompleted();}}};InnerObserver.prototype.dispose = function(){this.isStopped = true;};InnerObserver.prototype.fail = function(e){if(!this.isStopped){this.isStopped = true;this.parent.o.onError(e);return true;}return false;};return MergeObserver;})();observableProto.merge = function(maxConcurrentOrOther){return typeof maxConcurrentOrOther !== 'number'?observableMerge(this, maxConcurrentOrOther):new MergeObservable(this, maxConcurrentOrOther);};var observableMerge=Observable.merge = function(){var scheduler, sources=[], i, len=arguments.length;if(!arguments[0]){scheduler = immediateScheduler;for(i = 1; i < len; i++) {sources.push(arguments[i]);}}else if(isScheduler(arguments[0])){scheduler = arguments[0];for(i = 1; i < len; i++) {sources.push(arguments[i]);}}else {scheduler = immediateScheduler;for(i = 0; i < len; i++) {sources.push(arguments[i]);}}if(Array.isArray(sources[0])){sources = sources[0];}return observableOf(scheduler, sources).mergeAll();};var MergeAllObservable=(function(__super__){inherits(MergeAllObservable, __super__);function MergeAllObservable(source){this.source = source;__super__.call(this);}MergeAllObservable.prototype.subscribeCore = function(observer){var g=new CompositeDisposable(), m=new SingleAssignmentDisposable();g.add(m);m.setDisposable(this.source.subscribe(new MergeAllObserver(observer, g)));return g;};return MergeAllObservable;})(ObservableBase);var MergeAllObserver=(function(){function MergeAllObserver(o, g){this.o = o;this.g = g;this.isStopped = false;this.done = false;}MergeAllObserver.prototype.onNext = function(innerSource){if(this.isStopped){return;}var sad=new SingleAssignmentDisposable();this.g.add(sad);isPromise(innerSource) && (innerSource = observableFromPromise(innerSource));sad.setDisposable(innerSource.subscribe(new InnerObserver(this, this.g, sad)));};MergeAllObserver.prototype.onError = function(e){if(!this.isStopped){this.isStopped = true;this.o.onError(e);}};MergeAllObserver.prototype.onCompleted = function(){if(!this.isStopped){this.isStopped = true;this.done = true;this.g.length === 1 && this.o.onCompleted();}};MergeAllObserver.prototype.dispose = function(){this.isStopped = true;};MergeAllObserver.prototype.fail = function(e){if(!this.isStopped){this.isStopped = true;this.o.onError(e);return true;}return false;};function InnerObserver(parent, g, sad){this.parent = parent;this.g = g;this.sad = sad;this.isStopped = false;}InnerObserver.prototype.onNext = function(x){if(!this.isStopped){this.parent.o.onNext(x);}};InnerObserver.prototype.onError = function(e){if(!this.isStopped){this.isStopped = true;this.parent.o.onError(e);}};InnerObserver.prototype.onCompleted = function(){if(!this.isStopped){var parent=this.parent;this.isStopped = true;parent.g.remove(this.sad);parent.done && parent.g.length === 1 && parent.o.onCompleted();}};InnerObserver.prototype.dispose = function(){this.isStopped = true;};InnerObserver.prototype.fail = function(e){if(!this.isStopped){this.isStopped = true;this.parent.o.onError(e);return true;}return false;};return MergeAllObserver;})();observableProto.mergeAll = observableProto.mergeObservable = function(){return new MergeAllObservable(this);};var CompositeError=Rx.CompositeError = function(errors){this.name = 'NotImplementedError';this.innerErrors = errors;this.message = 'This contains multiple errors. Check the innerErrors';Error.call(this);};CompositeError.prototype = Error.prototype;Observable.mergeDelayError = function(){var args;if(Array.isArray(arguments[0])){args = arguments[0];}else {var len=arguments.length;args = new Array(len);for(var i=0; i < len; i++) {args[i] = arguments[i];}}var source=observableOf(null, args);return new AnonymousObservable(function(o){var group=new CompositeDisposable(), m=new SingleAssignmentDisposable(), isStopped=false, errors=[];function setCompletion(){if(errors.length === 0){o.onCompleted();}else if(errors.length === 1){o.onError(errors[0]);}else {o.onError(new CompositeError(errors));}}group.add(m);m.setDisposable(source.subscribe(function(innerSource){var innerSubscription=new SingleAssignmentDisposable();group.add(innerSubscription);isPromise(innerSource) && (innerSource = observableFromPromise(innerSource));innerSubscription.setDisposable(innerSource.subscribe(function(x){o.onNext(x);}, function(e){errors.push(e);group.remove(innerSubscription);isStopped && group.length === 1 && setCompletion();}, function(){group.remove(innerSubscription);isStopped && group.length === 1 && setCompletion();}));}, function(e){errors.push(e);isStopped = true;group.length === 1 && setCompletion();}, function(){isStopped = true;group.length === 1 && setCompletion();}));return group;});};observableProto.onErrorResumeNext = function(second){if(!second){throw new Error('Second observable is required');}return onErrorResumeNext([this, second]);};var onErrorResumeNext=Observable.onErrorResumeNext = function(){var sources=[];if(Array.isArray(arguments[0])){sources = arguments[0];}else {for(var i=0, len=arguments.length; i < len; i++) {sources.push(arguments[i]);}}return new AnonymousObservable(function(observer){var pos=0, subscription=new SerialDisposable(), cancelable=immediateScheduler.scheduleRecursive(function(self){var current, d;if(pos < sources.length){current = sources[pos++];isPromise(current) && (current = observableFromPromise(current));d = new SingleAssignmentDisposable();subscription.setDisposable(d);d.setDisposable(current.subscribe(observer.onNext.bind(observer), self, self));}else {observer.onCompleted();}});return new CompositeDisposable(subscription, cancelable);});};observableProto.skipUntil = function(other){var source=this;return new AnonymousObservable(function(o){var isOpen=false;var disposables=new CompositeDisposable(source.subscribe(function(left){isOpen && o.onNext(left);}, function(e){o.onError(e);}, function(){isOpen && o.onCompleted();}));isPromise(other) && (other = observableFromPromise(other));var rightSubscription=new SingleAssignmentDisposable();disposables.add(rightSubscription);rightSubscription.setDisposable(other.subscribe(function(){isOpen = true;rightSubscription.dispose();}, function(e){o.onError(e);}, function(){rightSubscription.dispose();}));return disposables;}, source);};observableProto['switch'] = observableProto.switchLatest = function(){var sources=this;return new AnonymousObservable(function(observer){var hasLatest=false, innerSubscription=new SerialDisposable(), isStopped=false, latest=0, subscription=sources.subscribe(function(innerSource){var d=new SingleAssignmentDisposable(), id=++latest;hasLatest = true;innerSubscription.setDisposable(d);isPromise(innerSource) && (innerSource = observableFromPromise(innerSource));d.setDisposable(innerSource.subscribe(function(x){latest === id && observer.onNext(x);}, function(e){latest === id && observer.onError(e);}, function(){if(latest === id){hasLatest = false;isStopped && observer.onCompleted();}}));}, function(e){observer.onError(e);}, function(){isStopped = true;!hasLatest && observer.onCompleted();});return new CompositeDisposable(subscription, innerSubscription);}, sources);};observableProto.takeUntil = function(other){var source=this;return new AnonymousObservable(function(o){isPromise(other) && (other = observableFromPromise(other));return new CompositeDisposable(source.subscribe(o), other.subscribe(function(){o.onCompleted();}, function(e){o.onError(e);}, noop));}, source);};observableProto.withLatestFrom = function(){var len=arguments.length, args=new Array(len);for(var i=0; i < len; i++) {args[i] = arguments[i];}var resultSelector=args.pop(), source=this;if(typeof source === 'undefined'){throw new Error('Source observable not found for withLatestFrom().');}if(typeof resultSelector !== 'function'){throw new Error('withLatestFrom() expects a resultSelector function.');}if(Array.isArray(args[0])){args = args[0];}return new AnonymousObservable(function(observer){var falseFactory=function falseFactory(){return false;}, n=args.length, hasValue=arrayInitialize(n, falseFactory), hasValueAll=false, values=new Array(n);var subscriptions=new Array(n + 1);for(var idx=0; idx < n; idx++) {(function(i){var other=args[i], sad=new SingleAssignmentDisposable();isPromise(other) && (other = observableFromPromise(other));sad.setDisposable(other.subscribe(function(x){values[i] = x;hasValue[i] = true;hasValueAll = hasValue.every(identity);}, observer.onError.bind(observer), function(){}));subscriptions[i] = sad;})(idx);}var sad=new SingleAssignmentDisposable();sad.setDisposable(source.subscribe(function(x){var res;var allValues=[x].concat(values);if(!hasValueAll)return;try{res = resultSelector.apply(null, allValues);}catch(ex) {observer.onError(ex);return;}observer.onNext(res);}, observer.onError.bind(observer), function(){observer.onCompleted();}));subscriptions[n] = sad;return new CompositeDisposable(subscriptions);}, this);};function zipArray(second, resultSelector){var first=this;return new AnonymousObservable(function(observer){var index=0, len=second.length;return first.subscribe(function(left){if(index < len){var right=second[index++], result;try{result = resultSelector(left, right);}catch(e) {return observer.onError(e);}observer.onNext(result);}else {observer.onCompleted();}}, function(e){observer.onError(e);}, function(){observer.onCompleted();});}, first);}function falseFactory(){return false;}function emptyArrayFactory(){return [];}observableProto.zip = function(){if(Array.isArray(arguments[0])){return zipArray.apply(this, arguments);}var len=arguments.length, args=new Array(len);for(var i=0; i < len; i++) {args[i] = arguments[i];}var parent=this, resultSelector=args.pop();args.unshift(parent);return new AnonymousObservable(function(observer){var n=args.length, queues=arrayInitialize(n, emptyArrayFactory), isDone=arrayInitialize(n, falseFactory);function next(i){var res, queuedValues;if(queues.every(function(x){return x.length > 0;})){try{queuedValues = queues.map(function(x){return x.shift();});res = resultSelector.apply(parent, queuedValues);}catch(ex) {observer.onError(ex);return;}observer.onNext(res);}else if(isDone.filter(function(x, j){return j !== i;}).every(identity)){observer.onCompleted();}};function done(i){isDone[i] = true;if(isDone.every(function(x){return x;})){observer.onCompleted();}}var subscriptions=new Array(n);for(var idx=0; idx < n; idx++) {(function(i){var source=args[i], sad=new SingleAssignmentDisposable();isPromise(source) && (source = observableFromPromise(source));sad.setDisposable(source.subscribe(function(x){queues[i].push(x);next(i);}, function(e){observer.onError(e);}, function(){done(i);}));subscriptions[i] = sad;})(idx);}return new CompositeDisposable(subscriptions);}, parent);};Observable.zip = function(){var len=arguments.length, args=new Array(len);for(var i=0; i < len; i++) {args[i] = arguments[i];}var first=args.shift();return first.zip.apply(first, args);};Observable.zipArray = function(){var sources;if(Array.isArray(arguments[0])){sources = arguments[0];}else {var len=arguments.length;sources = new Array(len);for(var i=0; i < len; i++) {sources[i] = arguments[i];}}return new AnonymousObservable(function(observer){var n=sources.length, queues=arrayInitialize(n, function(){return [];}), isDone=arrayInitialize(n, function(){return false;});function next(i){if(queues.every(function(x){return x.length > 0;})){var res=queues.map(function(x){return x.shift();});observer.onNext(res);}else if(isDone.filter(function(x, j){return j !== i;}).every(identity)){observer.onCompleted();return;}};function done(i){isDone[i] = true;if(isDone.every(identity)){observer.onCompleted();return;}}var subscriptions=new Array(n);for(var idx=0; idx < n; idx++) {(function(i){subscriptions[i] = new SingleAssignmentDisposable();subscriptions[i].setDisposable(sources[i].subscribe(function(x){queues[i].push(x);next(i);}, function(e){observer.onError(e);}, function(){done(i);}));})(idx);}return new CompositeDisposable(subscriptions);});};observableProto.asObservable = function(){var source=this;return new AnonymousObservable(function(o){return source.subscribe(o);}, this);};observableProto.bufferWithCount = function(count, skip){if(typeof skip !== 'number'){skip = count;}return this.windowWithCount(count, skip).selectMany(function(x){return x.toArray();}).where(function(x){return x.length > 0;});};observableProto.dematerialize = function(){var source=this;return new AnonymousObservable(function(o){return source.subscribe(function(x){return x.accept(o);}, function(e){o.onError(e);}, function(){o.onCompleted();});}, this);};observableProto.distinctUntilChanged = function(keySelector, comparer){var source=this;comparer || (comparer = defaultComparer);return new AnonymousObservable(function(o){var hasCurrentKey=false, currentKey;return source.subscribe(function(value){var key=value;if(keySelector){try{key = keySelector(value);}catch(e) {o.onError(e);return;}}if(hasCurrentKey){try{var comparerEquals=comparer(currentKey, key);}catch(e) {o.onError(e);return;}}if(!hasCurrentKey || !comparerEquals){hasCurrentKey = true;currentKey = key;o.onNext(value);}}, function(e){o.onError(e);}, function(){o.onCompleted();});}, this);};observableProto['do'] = observableProto.tap = observableProto.doAction = function(observerOrOnNext, onError, onCompleted){var source=this;return new AnonymousObservable(function(observer){var tapObserver=!observerOrOnNext || isFunction(observerOrOnNext)?observerCreate(observerOrOnNext || noop, onError || noop, onCompleted || noop):observerOrOnNext;return source.subscribe(function(x){try{tapObserver.onNext(x);}catch(e) {observer.onError(e);}observer.onNext(x);}, function(err){try{tapObserver.onError(err);}catch(e) {observer.onError(e);}observer.onError(err);}, function(){try{tapObserver.onCompleted();}catch(e) {observer.onError(e);}observer.onCompleted();});}, this);};observableProto.doOnNext = observableProto.tapOnNext = function(onNext, thisArg){return this.tap(typeof thisArg !== 'undefined'?function(x){onNext.call(thisArg, x);}:onNext);};observableProto.doOnError = observableProto.tapOnError = function(onError, thisArg){return this.tap(noop, typeof thisArg !== 'undefined'?function(e){onError.call(thisArg, e);}:onError);};observableProto.doOnCompleted = observableProto.tapOnCompleted = function(onCompleted, thisArg){return this.tap(noop, null, typeof thisArg !== 'undefined'?function(){onCompleted.call(thisArg);}:onCompleted);};observableProto['finally'] = observableProto.ensure = function(action){var source=this;return new AnonymousObservable(function(observer){var subscription;try{subscription = source.subscribe(observer);}catch(e) {action();throw e;}return disposableCreate(function(){try{subscription.dispose();}catch(e) {throw e;}finally {action();}});}, this);};observableProto.finallyAction = function(action){return this.ensure(action);};observableProto.ignoreElements = function(){var source=this;return new AnonymousObservable(function(o){return source.subscribe(noop, function(e){o.onError(e);}, function(){o.onCompleted();});}, source);};observableProto.materialize = function(){var source=this;return new AnonymousObservable(function(observer){return source.subscribe(function(value){observer.onNext(notificationCreateOnNext(value));}, function(e){observer.onNext(notificationCreateOnError(e));observer.onCompleted();}, function(){observer.onNext(notificationCreateOnCompleted());observer.onCompleted();});}, source);};observableProto.repeat = function(repeatCount){return enumerableRepeat(this, repeatCount).concat();};observableProto.retry = function(retryCount){return enumerableRepeat(this, retryCount).catchError();};observableProto.retryWhen = function(notifier){return enumerableRepeat(this).catchErrorWhen(notifier);};observableProto.scan = function(){var hasSeed=false, seed, accumulator, source=this;if(arguments.length === 2){hasSeed = true;seed = arguments[0];accumulator = arguments[1];}else {accumulator = arguments[0];}return new AnonymousObservable(function(o){var hasAccumulation, accumulation, hasValue;return source.subscribe(function(x){!hasValue && (hasValue = true);try{if(hasAccumulation){accumulation = accumulator(accumulation, x);}else {accumulation = hasSeed?accumulator(seed, x):x;hasAccumulation = true;}}catch(e) {o.onError(e);return;}o.onNext(accumulation);}, function(e){o.onError(e);}, function(){!hasValue && hasSeed && o.onNext(seed);o.onCompleted();});}, source);};observableProto.skipLast = function(count){if(count < 0){throw new ArgumentOutOfRangeError();}var source=this;return new AnonymousObservable(function(o){var q=[];return source.subscribe(function(x){q.push(x);q.length > count && o.onNext(q.shift());}, function(e){o.onError(e);}, function(){o.onCompleted();});}, source);};observableProto.startWith = function(){var values, scheduler, start=0;if(!!arguments.length && isScheduler(arguments[0])){scheduler = arguments[0];start = 1;}else {scheduler = immediateScheduler;}for(var args=[], i=start, len=arguments.length; i < len; i++) {args.push(arguments[i]);}return enumerableOf([observableFromArray(args, scheduler), this]).concat();};observableProto.takeLast = function(count){if(count < 0){throw new ArgumentOutOfRangeError();}var source=this;return new AnonymousObservable(function(o){var q=[];return source.subscribe(function(x){q.push(x);q.length > count && q.shift();}, function(e){o.onError(e);}, function(){while(q.length > 0) {o.onNext(q.shift());}o.onCompleted();});}, source);};observableProto.takeLastBuffer = function(count){var source=this;return new AnonymousObservable(function(o){var q=[];return source.subscribe(function(x){q.push(x);q.length > count && q.shift();}, function(e){o.onError(e);}, function(){o.onNext(q);o.onCompleted();});}, source);};observableProto.windowWithCount = function(count, skip){var source=this;+count || (count = 0);Math.abs(count) === Infinity && (count = 0);if(count <= 0){throw new ArgumentOutOfRangeError();}skip == null && (skip = count);+skip || (skip = 0);Math.abs(skip) === Infinity && (skip = 0);if(skip <= 0){throw new ArgumentOutOfRangeError();}return new AnonymousObservable(function(observer){var m=new SingleAssignmentDisposable(), refCountDisposable=new RefCountDisposable(m), n=0, q=[];function createWindow(){var s=new Subject();q.push(s);observer.onNext(addRef(s, refCountDisposable));}createWindow();m.setDisposable(source.subscribe(function(x){for(var i=0, len=q.length; i < len; i++) {q[i].onNext(x);}var c=n - count + 1;c >= 0 && c % skip === 0 && q.shift().onCompleted();++n % skip === 0 && createWindow();}, function(e){while(q.length > 0) {q.shift().onError(e);}observer.onError(e);}, function(){while(q.length > 0) {q.shift().onCompleted();}observer.onCompleted();}));return refCountDisposable;}, source);};function concatMap(source, selector, thisArg){var selectorFunc=bindCallback(selector, thisArg, 3);return source.map(function(x, i){var result=selectorFunc(x, i, source);isPromise(result) && (result = observableFromPromise(result));(isArrayLike(result) || isIterable(result)) && (result = observableFrom(result));return result;}).concatAll();}observableProto.selectConcat = observableProto.concatMap = function(selector, resultSelector, thisArg){if(isFunction(selector) && isFunction(resultSelector)){return this.concatMap(function(x, i){var selectorResult=selector(x, i);isPromise(selectorResult) && (selectorResult = observableFromPromise(selectorResult));(isArrayLike(selectorResult) || isIterable(selectorResult)) && (selectorResult = observableFrom(selectorResult));return selectorResult.map(function(y, i2){return resultSelector(x, y, i, i2);});});}return isFunction(selector)?concatMap(this, selector, thisArg):concatMap(this, function(){return selector;});};observableProto.concatMapObserver = observableProto.selectConcatObserver = function(onNext, onError, onCompleted, thisArg){var source=this, onNextFunc=bindCallback(onNext, thisArg, 2), onErrorFunc=bindCallback(onError, thisArg, 1), onCompletedFunc=bindCallback(onCompleted, thisArg, 0);return new AnonymousObservable(function(observer){var index=0;return source.subscribe(function(x){var result;try{result = onNextFunc(x, index++);}catch(e) {observer.onError(e);return;}isPromise(result) && (result = observableFromPromise(result));observer.onNext(result);}, function(err){var result;try{result = onErrorFunc(err);}catch(e) {observer.onError(e);return;}isPromise(result) && (result = observableFromPromise(result));observer.onNext(result);observer.onCompleted();}, function(){var result;try{result = onCompletedFunc();}catch(e) {observer.onError(e);return;}isPromise(result) && (result = observableFromPromise(result));observer.onNext(result);observer.onCompleted();});}, this).concatAll();};observableProto.defaultIfEmpty = function(defaultValue){var source=this;defaultValue === undefined && (defaultValue = null);return new AnonymousObservable(function(observer){var found=false;return source.subscribe(function(x){found = true;observer.onNext(x);}, function(e){observer.onError(e);}, function(){!found && observer.onNext(defaultValue);observer.onCompleted();});}, source);};function arrayIndexOfComparer(array, item, comparer){for(var i=0, len=array.length; i < len; i++) {if(comparer(array[i], item)){return i;}}return -1;}function HashSet(comparer){this.comparer = comparer;this.set = [];}HashSet.prototype.push = function(value){var retValue=arrayIndexOfComparer(this.set, value, this.comparer) === -1;retValue && this.set.push(value);return retValue;};observableProto.distinct = function(keySelector, comparer){var source=this;comparer || (comparer = defaultComparer);return new AnonymousObservable(function(o){var hashSet=new HashSet(comparer);return source.subscribe(function(x){var key=x;if(keySelector){try{key = keySelector(x);}catch(e) {o.onError(e);return;}}hashSet.push(key) && o.onNext(x);}, function(e){o.onError(e);}, function(){o.onCompleted();});}, this);};observableProto.groupBy = function(keySelector, elementSelector, comparer){return this.groupByUntil(keySelector, elementSelector, observableNever, comparer);};observableProto.groupByUntil = function(keySelector, elementSelector, durationSelector, comparer){var source=this;elementSelector || (elementSelector = identity);comparer || (comparer = defaultComparer);return new AnonymousObservable(function(observer){function handleError(e){return function(item){item.onError(e);};}var map=new Dictionary(0, comparer), groupDisposable=new CompositeDisposable(), refCountDisposable=new RefCountDisposable(groupDisposable);groupDisposable.add(source.subscribe(function(x){var key;try{key = keySelector(x);}catch(e) {map.getValues().forEach(handleError(e));observer.onError(e);return;}var fireNewMapEntry=false, writer=map.tryGetValue(key);if(!writer){writer = new Subject();map.set(key, writer);fireNewMapEntry = true;}if(fireNewMapEntry){var group=new GroupedObservable(key, writer, refCountDisposable), durationGroup=new GroupedObservable(key, writer);try{duration = durationSelector(durationGroup);}catch(e) {map.getValues().forEach(handleError(e));observer.onError(e);return;}observer.onNext(group);var md=new SingleAssignmentDisposable();groupDisposable.add(md);var expire=function expire(){map.remove(key) && writer.onCompleted();groupDisposable.remove(md);};md.setDisposable(duration.take(1).subscribe(noop, function(exn){map.getValues().forEach(handleError(exn));observer.onError(exn);}, expire));}var element;try{element = elementSelector(x);}catch(e) {map.getValues().forEach(handleError(e));observer.onError(e);return;}writer.onNext(element);}, function(ex){map.getValues().forEach(handleError(ex));observer.onError(ex);}, function(){map.getValues().forEach(function(item){item.onCompleted();});observer.onCompleted();}));return refCountDisposable;}, source);};var MapObservable=(function(__super__){inherits(MapObservable, __super__);function MapObservable(source, selector, thisArg){this.source = source;this.selector = bindCallback(selector, thisArg, 3);__super__.call(this);}MapObservable.prototype.internalMap = function(selector, thisArg){var self=this;return new MapObservable(this.source, function(x, i, o){return selector.call(this, self.selector(x, i, o), i, o);}, thisArg);};MapObservable.prototype.subscribeCore = function(observer){return this.source.subscribe(new MapObserver(observer, this.selector, this));};return MapObservable;})(ObservableBase);function MapObserver(observer, selector, source){this.observer = observer;this.selector = selector;this.source = source;this.i = 0;this.isStopped = false;}MapObserver.prototype.onNext = function(x){if(this.isStopped){return;}var result=tryCatch(this.selector).call(this, x, this.i++, this.source);if(result === errorObj){return this.observer.onError(result.e);}this.observer.onNext(result);};MapObserver.prototype.onError = function(e){if(!this.isStopped){this.isStopped = true;this.observer.onError(e);}};MapObserver.prototype.onCompleted = function(){if(!this.isStopped){this.isStopped = true;this.observer.onCompleted();}};MapObserver.prototype.dispose = function(){this.isStopped = true;};MapObserver.prototype.fail = function(e){if(!this.isStopped){this.isStopped = true;this.observer.onError(e);return true;}return false;};observableProto.map = observableProto.select = function(selector, thisArg){var selectorFn=typeof selector === 'function'?selector:function(){return selector;};return this instanceof MapObservable?this.internalMap(selectorFn, thisArg):new MapObservable(this, selectorFn, thisArg);};observableProto.pluck = function(){var args=arguments, len=arguments.length;if(len === 0){throw new Error('List of properties cannot be empty.');}return this.map(function(x){var currentProp=x;for(var i=0; i < len; i++) {var p=currentProp[args[i]];if(typeof p !== 'undefined'){currentProp = p;}else {return undefined;}}return currentProp;});};function flatMap(source, selector, thisArg){var selectorFunc=bindCallback(selector, thisArg, 3);return source.map(function(x, i){var result=selectorFunc(x, i, source);isPromise(result) && (result = observableFromPromise(result));(isArrayLike(result) || isIterable(result)) && (result = observableFrom(result));return result;}).mergeAll();}observableProto.selectMany = observableProto.flatMap = function(selector, resultSelector, thisArg){if(isFunction(selector) && isFunction(resultSelector)){return this.flatMap(function(x, i){var selectorResult=selector(x, i);isPromise(selectorResult) && (selectorResult = observableFromPromise(selectorResult));(isArrayLike(selectorResult) || isIterable(selectorResult)) && (selectorResult = observableFrom(selectorResult));return selectorResult.map(function(y, i2){return resultSelector(x, y, i, i2);});}, thisArg);}return isFunction(selector)?flatMap(this, selector, thisArg):flatMap(this, function(){return selector;});};observableProto.flatMapObserver = observableProto.selectManyObserver = function(onNext, onError, onCompleted, thisArg){var source=this;return new AnonymousObservable(function(observer){var index=0;return source.subscribe(function(x){var result;try{result = onNext.call(thisArg, x, index++);}catch(e) {observer.onError(e);return;}isPromise(result) && (result = observableFromPromise(result));observer.onNext(result);}, function(err){var result;try{result = onError.call(thisArg, err);}catch(e) {observer.onError(e);return;}isPromise(result) && (result = observableFromPromise(result));observer.onNext(result);observer.onCompleted();}, function(){var result;try{result = onCompleted.call(thisArg);}catch(e) {observer.onError(e);return;}isPromise(result) && (result = observableFromPromise(result));observer.onNext(result);observer.onCompleted();});}, source).mergeAll();};observableProto.selectSwitch = observableProto.flatMapLatest = observableProto.switchMap = function(selector, thisArg){return this.select(selector, thisArg).switchLatest();};observableProto.skip = function(count){if(count < 0){throw new ArgumentOutOfRangeError();}var source=this;return new AnonymousObservable(function(o){var remaining=count;return source.subscribe(function(x){if(remaining <= 0){o.onNext(x);}else {remaining--;}}, function(e){o.onError(e);}, function(){o.onCompleted();});}, source);};observableProto.skipWhile = function(predicate, thisArg){var source=this, callback=bindCallback(predicate, thisArg, 3);return new AnonymousObservable(function(o){var i=0, running=false;return source.subscribe(function(x){if(!running){try{running = !callback(x, i++, source);}catch(e) {o.onError(e);return;}}running && o.onNext(x);}, function(e){o.onError(e);}, function(){o.onCompleted();});}, source);};observableProto.take = function(count, scheduler){if(count < 0){throw new ArgumentOutOfRangeError();}if(count === 0){return observableEmpty(scheduler);}var source=this;return new AnonymousObservable(function(o){var remaining=count;return source.subscribe(function(x){if(remaining-- > 0){o.onNext(x);remaining === 0 && o.onCompleted();}}, function(e){o.onError(e);}, function(){o.onCompleted();});}, source);};observableProto.takeWhile = function(predicate, thisArg){var source=this, callback=bindCallback(predicate, thisArg, 3);return new AnonymousObservable(function(o){var i=0, running=true;return source.subscribe(function(x){if(running){try{running = callback(x, i++, source);}catch(e) {o.onError(e);return;}if(running){o.onNext(x);}else {o.onCompleted();}}}, function(e){o.onError(e);}, function(){o.onCompleted();});}, source);};var FilterObservable=(function(__super__){inherits(FilterObservable, __super__);function FilterObservable(source, predicate, thisArg){this.source = source;this.predicate = bindCallback(predicate, thisArg, 3);__super__.call(this);}FilterObservable.prototype.subscribeCore = function(observer){return this.source.subscribe(new FilterObserver(observer, this.predicate, this));};FilterObservable.prototype.internalFilter = function(predicate, thisArg){var self=this;return new FilterObservable(this.source, function(x, i, o){return self.predicate(x, i, o) && predicate.call(this, x, i, o);}, thisArg);};return FilterObservable;})(ObservableBase);function FilterObserver(observer, predicate, source){this.observer = observer;this.predicate = predicate;this.source = source;this.i = 0;this.isStopped = false;}FilterObserver.prototype.onNext = function(x){if(this.isStopped){return;}var shouldYield=tryCatch(this.predicate).call(this, x, this.i++, this.source);if(shouldYield === errorObj){return this.observer.onError(shouldYield.e);}shouldYield && this.observer.onNext(x);};FilterObserver.prototype.onError = function(e){if(!this.isStopped){this.isStopped = true;this.observer.onError(e);}};FilterObserver.prototype.onCompleted = function(){if(!this.isStopped){this.isStopped = true;this.observer.onCompleted();}};FilterObserver.prototype.dispose = function(){this.isStopped = true;};FilterObserver.prototype.fail = function(e){if(!this.isStopped){this.isStopped = true;this.observer.onError(e);return true;}return false;};observableProto.filter = observableProto.where = function(predicate, thisArg){return this instanceof FilterObservable?this.internalFilter(predicate, thisArg):new FilterObservable(this, predicate, thisArg);};function extremaBy(source, keySelector, comparer){return new AnonymousObservable(function(o){var hasValue=false, lastKey=null, list=[];return source.subscribe(function(x){var comparison, key;try{key = keySelector(x);}catch(ex) {o.onError(ex);return;}comparison = 0;if(!hasValue){hasValue = true;lastKey = key;}else {try{comparison = comparer(key, lastKey);}catch(ex1) {o.onError(ex1);return;}}if(comparison > 0){lastKey = key;list = [];}if(comparison >= 0){list.push(x);}}, function(e){o.onError(e);}, function(){o.onNext(list);o.onCompleted();});}, source);}function firstOnly(x){if(x.length === 0){throw new EmptyError();}return x[0];}observableProto.aggregate = function(){var hasSeed=false, accumulator, seed, source=this;if(arguments.length === 2){hasSeed = true;seed = arguments[0];accumulator = arguments[1];}else {accumulator = arguments[0];}return new AnonymousObservable(function(o){var hasAccumulation, accumulation, hasValue;return source.subscribe(function(x){!hasValue && (hasValue = true);try{if(hasAccumulation){accumulation = accumulator(accumulation, x);}else {accumulation = hasSeed?accumulator(seed, x):x;hasAccumulation = true;}}catch(e) {return o.onError(e);}}, function(e){o.onError(e);}, function(){hasValue && o.onNext(accumulation);!hasValue && hasSeed && o.onNext(seed);!hasValue && !hasSeed && o.onError(new EmptyError());o.onCompleted();});}, source);};observableProto.reduce = function(accumulator){var hasSeed=false, seed, source=this;if(arguments.length === 2){hasSeed = true;seed = arguments[1];}return new AnonymousObservable(function(o){var hasAccumulation, accumulation, hasValue;return source.subscribe(function(x){!hasValue && (hasValue = true);try{if(hasAccumulation){accumulation = accumulator(accumulation, x);}else {accumulation = hasSeed?accumulator(seed, x):x;hasAccumulation = true;}}catch(e) {return o.onError(e);}}, function(e){o.onError(e);}, function(){hasValue && o.onNext(accumulation);!hasValue && hasSeed && o.onNext(seed);!hasValue && !hasSeed && o.onError(new EmptyError());o.onCompleted();});}, source);};observableProto.some = function(predicate, thisArg){var source=this;return predicate?source.filter(predicate, thisArg).some():new AnonymousObservable(function(observer){return source.subscribe(function(){observer.onNext(true);observer.onCompleted();}, function(e){observer.onError(e);}, function(){observer.onNext(false);observer.onCompleted();});}, source);};observableProto.any = function(){return this.some.apply(this, arguments);};observableProto.isEmpty = function(){return this.any().map(not);};observableProto.every = function(predicate, thisArg){return this.filter(function(v){return !predicate(v);}, thisArg).some().map(not);};observableProto.all = function(){return this.every.apply(this, arguments);};observableProto.includes = function(searchElement, fromIndex){var source=this;function comparer(a, b){return a === 0 && b === 0 || (a === b || isNaN(a) && isNaN(b));}return new AnonymousObservable(function(o){var i=0, n=+fromIndex || 0;Math.abs(n) === Infinity && (n = 0);if(n < 0){o.onNext(false);o.onCompleted();return disposableEmpty;}return source.subscribe(function(x){if(i++ >= n && comparer(x, searchElement)){o.onNext(true);o.onCompleted();}}, function(e){o.onError(e);}, function(){o.onNext(false);o.onCompleted();});}, this);};observableProto.contains = function(searchElement, fromIndex){observableProto.includes(searchElement, fromIndex);};observableProto.count = function(predicate, thisArg){return predicate?this.filter(predicate, thisArg).count():this.reduce(function(count){return count + 1;}, 0);};observableProto.indexOf = function(searchElement, fromIndex){var source=this;return new AnonymousObservable(function(o){var i=0, n=+fromIndex || 0;Math.abs(n) === Infinity && (n = 0);if(n < 0){o.onNext(-1);o.onCompleted();return disposableEmpty;}return source.subscribe(function(x){if(i >= n && x === searchElement){o.onNext(i);o.onCompleted();}i++;}, function(e){o.onError(e);}, function(){o.onNext(-1);o.onCompleted();});}, source);};observableProto.sum = function(keySelector, thisArg){return keySelector && isFunction(keySelector)?this.map(keySelector, thisArg).sum():this.reduce(function(prev, curr){return prev + curr;}, 0);};observableProto.minBy = function(keySelector, comparer){comparer || (comparer = defaultSubComparer);return extremaBy(this, keySelector, function(x, y){return comparer(x, y) * -1;});};observableProto.min = function(comparer){return this.minBy(identity, comparer).map(function(x){return firstOnly(x);});};observableProto.maxBy = function(keySelector, comparer){comparer || (comparer = defaultSubComparer);return extremaBy(this, keySelector, comparer);};observableProto.max = function(comparer){return this.maxBy(identity, comparer).map(function(x){return firstOnly(x);});};observableProto.average = function(keySelector, thisArg){return keySelector && isFunction(keySelector)?this.map(keySelector, thisArg).average():this.reduce(function(prev, cur){return {sum:prev.sum + cur, count:prev.count + 1};}, {sum:0, count:0}).map(function(s){if(s.count === 0){throw new EmptyError();}return s.sum / s.count;});};observableProto.sequenceEqual = function(second, comparer){var first=this;comparer || (comparer = defaultComparer);return new AnonymousObservable(function(o){var donel=false, doner=false, ql=[], qr=[];var subscription1=first.subscribe(function(x){var equal, v;if(qr.length > 0){v = qr.shift();try{equal = comparer(v, x);}catch(e) {o.onError(e);return;}if(!equal){o.onNext(false);o.onCompleted();}}else if(doner){o.onNext(false);o.onCompleted();}else {ql.push(x);}}, function(e){o.onError(e);}, function(){donel = true;if(ql.length === 0){if(qr.length > 0){o.onNext(false);o.onCompleted();}else if(doner){o.onNext(true);o.onCompleted();}}});(isArrayLike(second) || isIterable(second)) && (second = observableFrom(second));isPromise(second) && (second = observableFromPromise(second));var subscription2=second.subscribe(function(x){var equal;if(ql.length > 0){var v=ql.shift();try{equal = comparer(v, x);}catch(exception) {o.onError(exception);return;}if(!equal){o.onNext(false);o.onCompleted();}}else if(donel){o.onNext(false);o.onCompleted();}else {qr.push(x);}}, function(e){o.onError(e);}, function(){doner = true;if(qr.length === 0){if(ql.length > 0){o.onNext(false);o.onCompleted();}else if(donel){o.onNext(true);o.onCompleted();}}});return new CompositeDisposable(subscription1, subscription2);}, first);};function elementAtOrDefault(source, index, hasDefault, defaultValue){if(index < 0){throw new ArgumentOutOfRangeError();}return new AnonymousObservable(function(o){var i=index;return source.subscribe(function(x){if(i-- === 0){o.onNext(x);o.onCompleted();}}, function(e){o.onError(e);}, function(){if(!hasDefault){o.onError(new ArgumentOutOfRangeError());}else {o.onNext(defaultValue);o.onCompleted();}});}, source);}observableProto.elementAt = function(index){return elementAtOrDefault(this, index, false);};observableProto.elementAtOrDefault = function(index, defaultValue){return elementAtOrDefault(this, index, true, defaultValue);};function singleOrDefaultAsync(source, hasDefault, defaultValue){return new AnonymousObservable(function(o){var value=defaultValue, seenValue=false;return source.subscribe(function(x){if(seenValue){o.onError(new Error('Sequence contains more than one element'));}else {value = x;seenValue = true;}}, function(e){o.onError(e);}, function(){if(!seenValue && !hasDefault){o.onError(new EmptyError());}else {o.onNext(value);o.onCompleted();}});}, source);}observableProto.single = function(predicate, thisArg){return predicate && isFunction(predicate)?this.where(predicate, thisArg).single():singleOrDefaultAsync(this, false);};observableProto.singleOrDefault = function(predicate, defaultValue, thisArg){return predicate && isFunction(predicate)?this.filter(predicate, thisArg).singleOrDefault(null, defaultValue):singleOrDefaultAsync(this, true, defaultValue);};function firstOrDefaultAsync(source, hasDefault, defaultValue){return new AnonymousObservable(function(o){return source.subscribe(function(x){o.onNext(x);o.onCompleted();}, function(e){o.onError(e);}, function(){if(!hasDefault){o.onError(new EmptyError());}else {o.onNext(defaultValue);o.onCompleted();}});}, source);}observableProto.first = function(predicate, thisArg){return predicate?this.where(predicate, thisArg).first():firstOrDefaultAsync(this, false);};observableProto.firstOrDefault = function(predicate, defaultValue, thisArg){return predicate?this.where(predicate).firstOrDefault(null, defaultValue):firstOrDefaultAsync(this, true, defaultValue);};function lastOrDefaultAsync(source, hasDefault, defaultValue){return new AnonymousObservable(function(o){var value=defaultValue, seenValue=false;return source.subscribe(function(x){value = x;seenValue = true;}, function(e){o.onError(e);}, function(){if(!seenValue && !hasDefault){o.onError(new EmptyError());}else {o.onNext(value);o.onCompleted();}});}, source);}observableProto.last = function(predicate, thisArg){return predicate?this.where(predicate, thisArg).last():lastOrDefaultAsync(this, false);};observableProto.lastOrDefault = function(predicate, defaultValue, thisArg){return predicate?this.where(predicate, thisArg).lastOrDefault(null, defaultValue):lastOrDefaultAsync(this, true, defaultValue);};function findValue(source, predicate, thisArg, yieldIndex){var callback=bindCallback(predicate, thisArg, 3);return new AnonymousObservable(function(o){var i=0;return source.subscribe(function(x){var shouldRun;try{shouldRun = callback(x, i, source);}catch(e) {o.onError(e);return;}if(shouldRun){o.onNext(yieldIndex?i:x);o.onCompleted();}else {i++;}}, function(e){o.onError(e);}, function(){o.onNext(yieldIndex?-1:undefined);o.onCompleted();});}, source);}observableProto.find = function(predicate, thisArg){return findValue(this, predicate, thisArg, false);};observableProto.findIndex = function(predicate, thisArg){return findValue(this, predicate, thisArg, true);};observableProto.toSet = function(){if(typeof root.Set === 'undefined'){throw new TypeError();}var source=this;return new AnonymousObservable(function(o){var s=new root.Set();return source.subscribe(function(x){s.add(x);}, function(e){o.onError(e);}, function(){o.onNext(s);o.onCompleted();});}, source);};observableProto.toMap = function(keySelector, elementSelector){if(typeof root.Map === 'undefined'){throw new TypeError();}var source=this;return new AnonymousObservable(function(o){var m=new root.Map();return source.subscribe(function(x){var key;try{key = keySelector(x);}catch(e) {o.onError(e);return;}var element=x;if(elementSelector){try{element = elementSelector(x);}catch(e) {o.onError(e);return;}}m.set(key, element);}, function(e){o.onError(e);}, function(){o.onNext(m);o.onCompleted();});}, source);};var fnString='function', throwString='throw', isObject=Rx.internals.isObject;function toThunk(obj, ctx){if(Array.isArray(obj)){return objectToThunk.call(ctx, obj);}if(isGeneratorFunction(obj)){return observableSpawn(obj.call(ctx));}if(isGenerator(obj)){return observableSpawn(obj);}if(isObservable(obj)){return observableToThunk(obj);}if(isPromise(obj)){return promiseToThunk(obj);}if(typeof obj === fnString){return obj;}if(isObject(obj) || Array.isArray(obj)){return objectToThunk.call(ctx, obj);}return obj;}function objectToThunk(obj){var ctx=this;return function(done){var keys=Object.keys(obj), pending=keys.length, results=new obj.constructor(), finished;if(!pending){timeoutScheduler.schedule(function(){done(null, results);});return;}for(var i=0, len=keys.length; i < len; i++) {run(obj[keys[i]], keys[i]);}function run(fn, key){if(finished){return;}try{fn = toThunk(fn, ctx);if(typeof fn !== fnString){results[key] = fn;return --pending || done(null, results);}fn.call(ctx, function(err, res){if(finished){return;}if(err){finished = true;return done(err);}results[key] = res;--pending || done(null, results);});}catch(e) {finished = true;done(e);}}};}function observableToThunk(observable){return function(fn){var value, hasValue=false;observable.subscribe(function(v){value = v;hasValue = true;}, fn, function(){hasValue && fn(null, value);});};}function promiseToThunk(promise){return function(fn){promise.then(function(res){fn(null, res);}, fn);};}function isObservable(obj){return obj && typeof obj.subscribe === fnString;}function isGeneratorFunction(obj){return obj && obj.constructor && obj.constructor.name === 'GeneratorFunction';}function isGenerator(obj){return obj && typeof obj.next === fnString && typeof obj[throwString] === fnString;}var observableSpawn=Rx.spawn = function(fn){var isGenFun=isGeneratorFunction(fn);return function(done){var ctx=this, gen=fn;if(isGenFun){for(var args=[], i=0, len=arguments.length; i < len; i++) {args.push(arguments[i]);}var len=args.length, hasCallback=len && typeof args[len - 1] === fnString;done = hasCallback?args.pop():handleError;gen = fn.apply(this, args);}else {done = done || handleError;}next();function exit(err, res){timeoutScheduler.schedule(done.bind(ctx, err, res));}function next(err, res){var ret;if(arguments.length > 2){for(var res=[], i=1, len=arguments.length; i < len; i++) {res.push(arguments[i]);}}if(err){try{ret = gen[throwString](err);}catch(e) {return exit(e);}}if(!err){try{ret = gen.next(res);}catch(e) {return exit(e);}}if(ret.done){return exit(null, ret.value);}ret.value = toThunk(ret.value, ctx);if(typeof ret.value === fnString){var called=false;try{ret.value.call(ctx, function(){if(called){return;}called = true;next.apply(ctx, arguments);});}catch(e) {timeoutScheduler.schedule(function(){if(called){return;}called = true;next.call(ctx, e);});}return;}next(new TypeError('Rx.spawn only supports a function, Promise, Observable, Object or Array.'));}};};function handleError(err){if(!err){return;}timeoutScheduler.schedule(function(){throw err;});}Observable.start = function(func, context, scheduler){return observableToAsync(func, context, scheduler)();};var observableToAsync=Observable.toAsync = function(func, context, scheduler){isScheduler(scheduler) || (scheduler = timeoutScheduler);return function(){var args=arguments, subject=new AsyncSubject();scheduler.schedule(function(){var result;try{result = func.apply(context, args);}catch(e) {subject.onError(e);return;}subject.onNext(result);subject.onCompleted();});return subject.asObservable();};};Observable.fromCallback = function(func, context, selector){return function(){var len=arguments.length, args=new Array(len);for(var i=0; i < len; i++) {args[i] = arguments[i];}return new AnonymousObservable(function(observer){function handler(){var len=arguments.length, results=new Array(len);for(var i=0; i < len; i++) {results[i] = arguments[i];}if(selector){try{results = selector.apply(context, results);}catch(e) {return observer.onError(e);}observer.onNext(results);}else {if(results.length <= 1){observer.onNext.apply(observer, results);}else {observer.onNext(results);}}observer.onCompleted();}args.push(handler);func.apply(context, args);}).publishLast().refCount();};};Observable.fromNodeCallback = function(func, context, selector){return function(){var len=arguments.length, args=new Array(len);for(var i=0; i < len; i++) {args[i] = arguments[i];}return new AnonymousObservable(function(observer){function handler(err){if(err){observer.onError(err);return;}var len=arguments.length, results=[];for(var i=1; i < len; i++) {results[i - 1] = arguments[i];}if(selector){try{results = selector.apply(context, results);}catch(e) {return observer.onError(e);}observer.onNext(results);}else {if(results.length <= 1){observer.onNext.apply(observer, results);}else {observer.onNext(results);}}observer.onCompleted();}args.push(handler);func.apply(context, args);}).publishLast().refCount();};};function createListener(element, name, handler){if(element.addEventListener){element.addEventListener(name, handler, false);return disposableCreate(function(){element.removeEventListener(name, handler, false);});}throw new Error('No listener found');}function createEventListener(el, eventName, handler){var disposables=new CompositeDisposable();if(Object.prototype.toString.call(el) === '[object NodeList]'){for(var i=0, len=el.length; i < len; i++) {disposables.add(createEventListener(el.item(i), eventName, handler));}}else if(el){disposables.add(createListener(el, eventName, handler));}return disposables;}Rx.config.useNativeEvents = false;Observable.fromEvent = function(element, eventName, selector){if(element.addListener){return fromEventPattern(function(h){element.addListener(eventName, h);}, function(h){element.removeListener(eventName, h);}, selector);}if(!Rx.config.useNativeEvents){if(typeof element.on === 'function' && typeof element.off === 'function'){return fromEventPattern(function(h){element.on(eventName, h);}, function(h){element.off(eventName, h);}, selector);}}return new AnonymousObservable(function(observer){return createEventListener(element, eventName, function handler(e){var results=e;if(selector){try{results = selector(arguments);}catch(err) {return observer.onError(err);}}observer.onNext(results);});}).publish().refCount();};var fromEventPattern=Observable.fromEventPattern = function(addHandler, removeHandler, selector){return new AnonymousObservable(function(observer){function innerHandler(e){var result=e;if(selector){try{result = selector(arguments);}catch(err) {return observer.onError(err);}}observer.onNext(result);}var returnValue=addHandler(innerHandler);return disposableCreate(function(){if(removeHandler){removeHandler(innerHandler, returnValue);}});}).publish().refCount();};Observable.startAsync = function(functionAsync){var promise;try{promise = functionAsync();}catch(e) {return observableThrow(e);}return observableFromPromise(promise);};var PausableObservable=(function(__super__){inherits(PausableObservable, __super__);function subscribe(observer){var conn=this.source.publish(), subscription=conn.subscribe(observer), connection=disposableEmpty;var pausable=this.pauser.distinctUntilChanged().subscribe(function(b){if(b){connection = conn.connect();}else {connection.dispose();connection = disposableEmpty;}});return new CompositeDisposable(subscription, connection, pausable);}function PausableObservable(source, pauser){this.source = source;this.controller = new Subject();if(pauser && pauser.subscribe){this.pauser = this.controller.merge(pauser);}else {this.pauser = this.controller;}__super__.call(this, subscribe, source);}PausableObservable.prototype.pause = function(){this.controller.onNext(false);};PausableObservable.prototype.resume = function(){this.controller.onNext(true);};return PausableObservable;})(Observable);observableProto.pausable = function(pauser){return new PausableObservable(this, pauser);};function combineLatestSource(source, subject, resultSelector){return new AnonymousObservable(function(o){var hasValue=[false, false], hasValueAll=false, isDone=false, values=new Array(2), err;function next(x, i){values[i] = x;var res;hasValue[i] = true;if(hasValueAll || (hasValueAll = hasValue.every(identity))){if(err){o.onError(err);return;}try{res = resultSelector.apply(null, values);}catch(ex) {o.onError(ex);return;}o.onNext(res);}if(isDone && values[1]){o.onCompleted();}}return new CompositeDisposable(source.subscribe(function(x){next(x, 0);}, function(e){if(values[1]){o.onError(e);}else {err = e;}}, function(){isDone = true;values[1] && o.onCompleted();}), subject.subscribe(function(x){next(x, 1);}, function(e){o.onError(e);}, function(){isDone = true;next(true, 1);}));}, source);}var PausableBufferedObservable=(function(__super__){inherits(PausableBufferedObservable, __super__);function subscribe(o){var q=[], previousShouldFire;var subscription=combineLatestSource(this.source, this.pauser.distinctUntilChanged().startWith(false), function(data, shouldFire){return {data:data, shouldFire:shouldFire};}).subscribe(function(results){if(previousShouldFire !== undefined && results.shouldFire != previousShouldFire){previousShouldFire = results.shouldFire;if(results.shouldFire){while(q.length > 0) {o.onNext(q.shift());}}}else {previousShouldFire = results.shouldFire;if(results.shouldFire){o.onNext(results.data);}else {q.push(results.data);}}}, function(err){while(q.length > 0) {o.onNext(q.shift());}o.onError(err);}, function(){while(q.length > 0) {o.onNext(q.shift());}o.onCompleted();});return subscription;}function PausableBufferedObservable(source, pauser){this.source = source;this.controller = new Subject();if(pauser && pauser.subscribe){this.pauser = this.controller.merge(pauser);}else {this.pauser = this.controller;}__super__.call(this, subscribe, source);}PausableBufferedObservable.prototype.pause = function(){this.controller.onNext(false);};PausableBufferedObservable.prototype.resume = function(){this.controller.onNext(true);};return PausableBufferedObservable;})(Observable);observableProto.pausableBuffered = function(subject){return new PausableBufferedObservable(this, subject);};var ControlledObservable=(function(__super__){inherits(ControlledObservable, __super__);function subscribe(observer){return this.source.subscribe(observer);}function ControlledObservable(source, enableQueue, scheduler){__super__.call(this, subscribe, source);this.subject = new ControlledSubject(enableQueue, scheduler);this.source = source.multicast(this.subject).refCount();}ControlledObservable.prototype.request = function(numberOfItems){return this.subject.request(numberOfItems == null?-1:numberOfItems);};return ControlledObservable;})(Observable);var ControlledSubject=(function(__super__){function subscribe(observer){return this.subject.subscribe(observer);}inherits(ControlledSubject, __super__);function ControlledSubject(enableQueue, scheduler){enableQueue == null && (enableQueue = true);__super__.call(this, subscribe);this.subject = new Subject();this.enableQueue = enableQueue;this.queue = enableQueue?[]:null;this.requestedCount = 0;this.requestedDisposable = disposableEmpty;this.error = null;this.hasFailed = false;this.hasCompleted = false;this.scheduler = scheduler || currentThreadScheduler;}addProperties(ControlledSubject.prototype, Observer, {onCompleted:function onCompleted(){this.hasCompleted = true;if(!this.enableQueue || this.queue.length === 0){this.subject.onCompleted();}else {this.queue.push(Notification.createOnCompleted());}}, onError:function onError(error){this.hasFailed = true;this.error = error;if(!this.enableQueue || this.queue.length === 0){this.subject.onError(error);}else {this.queue.push(Notification.createOnError(error));}}, onNext:function onNext(value){var hasRequested=false;if(this.requestedCount === 0){this.enableQueue && this.queue.push(Notification.createOnNext(value));}else {this.requestedCount !== -1 && this.requestedCount-- === 0 && this.disposeCurrentRequest();hasRequested = true;}hasRequested && this.subject.onNext(value);}, _processRequest:function _processRequest(numberOfItems){if(this.enableQueue){while(this.queue.length >= numberOfItems && numberOfItems > 0 || this.queue.length > 0 && this.queue[0].kind !== 'N') {var first=this.queue.shift();first.accept(this.subject);if(first.kind === 'N'){numberOfItems--;}else {this.disposeCurrentRequest();this.queue = [];}}return {numberOfItems:numberOfItems, returnValue:this.queue.length !== 0};}return {numberOfItems:numberOfItems, returnValue:false};}, request:function request(number){this.disposeCurrentRequest();var self=this;this.requestedDisposable = this.scheduler.scheduleWithState(number, function(s, i){var r=self._processRequest(i), remaining=r.numberOfItems;if(!r.returnValue){self.requestedCount = remaining;self.requestedDisposable = disposableCreate(function(){self.requestedCount = 0;});}});return this.requestedDisposable;}, disposeCurrentRequest:function disposeCurrentRequest(){this.requestedDisposable.dispose();this.requestedDisposable = disposableEmpty;}});return ControlledSubject;})(Observable);observableProto.controlled = function(enableQueue, scheduler){if(enableQueue && isScheduler(enableQueue)){scheduler = enableQueue;enableQueue = true;}if(enableQueue == null){enableQueue = true;}return new ControlledObservable(this, enableQueue, scheduler);};var StopAndWaitObservable=(function(__super__){function subscribe(observer){this.subscription = this.source.subscribe(new StopAndWaitObserver(observer, this, this.subscription));var self=this;timeoutScheduler.schedule(function(){self.source.request(1);});return this.subscription;}inherits(StopAndWaitObservable, __super__);function StopAndWaitObservable(source){__super__.call(this, subscribe, source);this.source = source;}var StopAndWaitObserver=(function(__sub__){inherits(StopAndWaitObserver, __sub__);function StopAndWaitObserver(observer, observable, cancel){__sub__.call(this);this.observer = observer;this.observable = observable;this.cancel = cancel;}var stopAndWaitObserverProto=StopAndWaitObserver.prototype;stopAndWaitObserverProto.completed = function(){this.observer.onCompleted();this.dispose();};stopAndWaitObserverProto.error = function(error){this.observer.onError(error);this.dispose();};stopAndWaitObserverProto.next = function(value){this.observer.onNext(value);var self=this;timeoutScheduler.schedule(function(){self.observable.source.request(1);});};stopAndWaitObserverProto.dispose = function(){this.observer = null;if(this.cancel){this.cancel.dispose();this.cancel = null;}__sub__.prototype.dispose.call(this);};return StopAndWaitObserver;})(AbstractObserver);return StopAndWaitObservable;})(Observable);ControlledObservable.prototype.stopAndWait = function(){return new StopAndWaitObservable(this);};var WindowedObservable=(function(__super__){function subscribe(observer){this.subscription = this.source.subscribe(new WindowedObserver(observer, this, this.subscription));var self=this;timeoutScheduler.schedule(function(){self.source.request(self.windowSize);});return this.subscription;}inherits(WindowedObservable, __super__);function WindowedObservable(source, windowSize){__super__.call(this, subscribe, source);this.source = source;this.windowSize = windowSize;}var WindowedObserver=(function(__sub__){inherits(WindowedObserver, __sub__);function WindowedObserver(observer, observable, cancel){this.observer = observer;this.observable = observable;this.cancel = cancel;this.received = 0;}var windowedObserverPrototype=WindowedObserver.prototype;windowedObserverPrototype.completed = function(){this.observer.onCompleted();this.dispose();};windowedObserverPrototype.error = function(error){this.observer.onError(error);this.dispose();};windowedObserverPrototype.next = function(value){this.observer.onNext(value);this.received = ++this.received % this.observable.windowSize;if(this.received === 0){var self=this;timeoutScheduler.schedule(function(){self.observable.source.request(self.observable.windowSize);});}};windowedObserverPrototype.dispose = function(){this.observer = null;if(this.cancel){this.cancel.dispose();this.cancel = null;}__sub__.prototype.dispose.call(this);};return WindowedObserver;})(AbstractObserver);return WindowedObservable;})(Observable);ControlledObservable.prototype.windowed = function(windowSize){return new WindowedObservable(this, windowSize);};observableProto.pipe = function(dest){var source=this.pausableBuffered();function onDrain(){source.resume();}dest.addListener('drain', onDrain);source.subscribe(function(x){!dest.write(String(x)) && source.pause();}, function(err){dest.emit('error', err);}, function(){!dest._isStdio && dest.end();dest.removeListener('drain', onDrain);});source.resume();return dest;};observableProto.multicast = function(subjectOrSubjectSelector, selector){var source=this;return typeof subjectOrSubjectSelector === 'function'?new AnonymousObservable(function(observer){var connectable=source.multicast(subjectOrSubjectSelector());return new CompositeDisposable(selector(connectable).subscribe(observer), connectable.connect());}, source):new ConnectableObservable(source, subjectOrSubjectSelector);};observableProto.publish = function(selector){return selector && isFunction(selector)?this.multicast(function(){return new Subject();}, selector):this.multicast(new Subject());};observableProto.share = function(){return this.publish().refCount();};observableProto.publishLast = function(selector){return selector && isFunction(selector)?this.multicast(function(){return new AsyncSubject();}, selector):this.multicast(new AsyncSubject());};observableProto.publishValue = function(initialValueOrSelector, initialValue){return arguments.length === 2?this.multicast(function(){return new BehaviorSubject(initialValue);}, initialValueOrSelector):this.multicast(new BehaviorSubject(initialValueOrSelector));};observableProto.shareValue = function(initialValue){return this.publishValue(initialValue).refCount();};observableProto.replay = function(selector, bufferSize, windowSize, scheduler){return selector && isFunction(selector)?this.multicast(function(){return new ReplaySubject(bufferSize, windowSize, scheduler);}, selector):this.multicast(new ReplaySubject(bufferSize, windowSize, scheduler));};observableProto.shareReplay = function(bufferSize, windowSize, scheduler){return this.replay(null, bufferSize, windowSize, scheduler).refCount();};var InnerSubscription=function InnerSubscription(subject, observer){this.subject = subject;this.observer = observer;};InnerSubscription.prototype.dispose = function(){if(!this.subject.isDisposed && this.observer !== null){var idx=this.subject.observers.indexOf(this.observer);this.subject.observers.splice(idx, 1);this.observer = null;}};var BehaviorSubject=Rx.BehaviorSubject = (function(__super__){function subscribe(observer){checkDisposed(this);if(!this.isStopped){this.observers.push(observer);observer.onNext(this.value);return new InnerSubscription(this, observer);}if(this.hasError){observer.onError(this.error);}else {observer.onCompleted();}return disposableEmpty;}inherits(BehaviorSubject, __super__);function BehaviorSubject(value){__super__.call(this, subscribe);this.value = value, this.observers = [], this.isDisposed = false, this.isStopped = false, this.hasError = false;}addProperties(BehaviorSubject.prototype, Observer, {getValue:function getValue(){checkDisposed(this);if(this.hasError){throw this.error;}return this.value;}, hasObservers:function hasObservers(){return this.observers.length > 0;}, onCompleted:function onCompleted(){checkDisposed(this);if(this.isStopped){return;}this.isStopped = true;for(var i=0, os=cloneArray(this.observers), len=os.length; i < len; i++) {os[i].onCompleted();}this.observers.length = 0;}, onError:function onError(error){checkDisposed(this);if(this.isStopped){return;}this.isStopped = true;this.hasError = true;this.error = error;for(var i=0, os=cloneArray(this.observers), len=os.length; i < len; i++) {os[i].onError(error);}this.observers.length = 0;}, onNext:function onNext(value){checkDisposed(this);if(this.isStopped){return;}this.value = value;for(var i=0, os=cloneArray(this.observers), len=os.length; i < len; i++) {os[i].onNext(value);}}, dispose:function dispose(){this.isDisposed = true;this.observers = null;this.value = null;this.exception = null;}});return BehaviorSubject;})(Observable);var ReplaySubject=Rx.ReplaySubject = (function(__super__){var maxSafeInteger=Math.pow(2, 53) - 1;function createRemovableDisposable(subject, observer){return disposableCreate(function(){observer.dispose();!subject.isDisposed && subject.observers.splice(subject.observers.indexOf(observer), 1);});}function subscribe(observer){var so=new ScheduledObserver(this.scheduler, observer), subscription=createRemovableDisposable(this, so);checkDisposed(this);this._trim(this.scheduler.now());this.observers.push(so);for(var i=0, len=this.q.length; i < len; i++) {so.onNext(this.q[i].value);}if(this.hasError){so.onError(this.error);}else if(this.isStopped){so.onCompleted();}so.ensureActive();return subscription;}inherits(ReplaySubject, __super__);function ReplaySubject(bufferSize, windowSize, scheduler){this.bufferSize = bufferSize == null?maxSafeInteger:bufferSize;this.windowSize = windowSize == null?maxSafeInteger:windowSize;this.scheduler = scheduler || currentThreadScheduler;this.q = [];this.observers = [];this.isStopped = false;this.isDisposed = false;this.hasError = false;this.error = null;__super__.call(this, subscribe);}addProperties(ReplaySubject.prototype, Observer.prototype, {hasObservers:function hasObservers(){return this.observers.length > 0;}, _trim:function _trim(now){while(this.q.length > this.bufferSize) {this.q.shift();}while(this.q.length > 0 && now - this.q[0].interval > this.windowSize) {this.q.shift();}}, onNext:function onNext(value){checkDisposed(this);if(this.isStopped){return;}var now=this.scheduler.now();this.q.push({interval:now, value:value});this._trim(now);for(var i=0, os=cloneArray(this.observers), len=os.length; i < len; i++) {var observer=os[i];observer.onNext(value);observer.ensureActive();}}, onError:function onError(error){checkDisposed(this);if(this.isStopped){return;}this.isStopped = true;this.error = error;this.hasError = true;var now=this.scheduler.now();this._trim(now);for(var i=0, os=cloneArray(this.observers), len=os.length; i < len; i++) {var observer=os[i];observer.onError(error);observer.ensureActive();}this.observers.length = 0;}, onCompleted:function onCompleted(){checkDisposed(this);if(this.isStopped){return;}this.isStopped = true;var now=this.scheduler.now();this._trim(now);for(var i=0, os=cloneArray(this.observers), len=os.length; i < len; i++) {var observer=os[i];observer.onCompleted();observer.ensureActive();}this.observers.length = 0;}, dispose:function dispose(){this.isDisposed = true;this.observers = null;}});return ReplaySubject;})(Observable);var ConnectableObservable=Rx.ConnectableObservable = (function(__super__){inherits(ConnectableObservable, __super__);function ConnectableObservable(source, subject){var hasSubscription=false, subscription, sourceObservable=source.asObservable();this.connect = function(){if(!hasSubscription){hasSubscription = true;subscription = new CompositeDisposable(sourceObservable.subscribe(subject), disposableCreate(function(){hasSubscription = false;}));}return subscription;};__super__.call(this, function(o){return subject.subscribe(o);});}ConnectableObservable.prototype.refCount = function(){var connectableSubscription, count=0, source=this;return new AnonymousObservable(function(observer){var shouldConnect=++count === 1, subscription=source.subscribe(observer);shouldConnect && (connectableSubscription = source.connect());return function(){subscription.dispose();--count === 0 && connectableSubscription.dispose();};});};return ConnectableObservable;})(Observable);var Dictionary=(function(){var primes=[1, 3, 7, 13, 31, 61, 127, 251, 509, 1021, 2039, 4093, 8191, 16381, 32749, 65521, 131071, 262139, 524287, 1048573, 2097143, 4194301, 8388593, 16777213, 33554393, 67108859, 134217689, 268435399, 536870909, 1073741789, 2147483647], noSuchkey='no such key', duplicatekey='duplicate key';function isPrime(candidate){if((candidate & 1) === 0){return candidate === 2;}var num1=Math.sqrt(candidate), num2=3;while(num2 <= num1) {if(candidate % num2 === 0){return false;}num2 += 2;}return true;}function getPrime(min){var index, num, candidate;for(index = 0; index < primes.length; ++index) {num = primes[index];if(num >= min){return num;}}candidate = min | 1;while(candidate < primes[primes.length - 1]) {if(isPrime(candidate)){return candidate;}candidate += 2;}return min;}function stringHashFn(str){var hash=757602046;if(!str.length){return hash;}for(var i=0, len=str.length; i < len; i++) {var character=str.charCodeAt(i);hash = (hash << 5) - hash + character;hash = hash & hash;}return hash;}function numberHashFn(key){var c2=668265261;key = key ^ 61 ^ key >>> 16;key = key + (key << 3);key = key ^ key >>> 4;key = key * c2;key = key ^ key >>> 15;return key;}var getHashCode=(function(){var uniqueIdCounter=0;return function(obj){if(obj == null){throw new Error(noSuchkey);}if(typeof obj === 'string'){return stringHashFn(obj);}if(typeof obj === 'number'){return numberHashFn(obj);}if(typeof obj === 'boolean'){return obj === true?1:0;}if(obj instanceof Date){return numberHashFn(obj.valueOf());}if(obj instanceof RegExp){return stringHashFn(obj.toString());}if(typeof obj.valueOf === 'function'){var valueOf=obj.valueOf();if(typeof valueOf === 'number'){return numberHashFn(valueOf);}if(typeof valueOf === 'string'){return stringHashFn(valueOf);}}if(obj.hashCode){return obj.hashCode();}var id=17 * uniqueIdCounter++;obj.hashCode = function(){return id;};return id;};})();function newEntry(){return {key:null, value:null, next:0, hashCode:0};}function Dictionary(capacity, comparer){if(capacity < 0){throw new ArgumentOutOfRangeError();}if(capacity > 0){this._initialize(capacity);}this.comparer = comparer || defaultComparer;this.freeCount = 0;this.size = 0;this.freeList = -1;}var dictionaryProto=Dictionary.prototype;dictionaryProto._initialize = function(capacity){var prime=getPrime(capacity), i;this.buckets = new Array(prime);this.entries = new Array(prime);for(i = 0; i < prime; i++) {this.buckets[i] = -1;this.entries[i] = newEntry();}this.freeList = -1;};dictionaryProto.add = function(key, value){this._insert(key, value, true);};dictionaryProto._insert = function(key, value, add){if(!this.buckets){this._initialize(0);}var index3, num=getHashCode(key) & 2147483647, index1=num % this.buckets.length;for(var index2=this.buckets[index1]; index2 >= 0; index2 = this.entries[index2].next) {if(this.entries[index2].hashCode === num && this.comparer(this.entries[index2].key, key)){if(add){throw new Error(duplicatekey);}this.entries[index2].value = value;return;}}if(this.freeCount > 0){index3 = this.freeList;this.freeList = this.entries[index3].next;--this.freeCount;}else {if(this.size === this.entries.length){this._resize();index1 = num % this.buckets.length;}index3 = this.size;++this.size;}this.entries[index3].hashCode = num;this.entries[index3].next = this.buckets[index1];this.entries[index3].key = key;this.entries[index3].value = value;this.buckets[index1] = index3;};dictionaryProto._resize = function(){var prime=getPrime(this.size * 2), numArray=new Array(prime);for(index = 0; index < numArray.length; ++index) {numArray[index] = -1;}var entryArray=new Array(prime);for(index = 0; index < this.size; ++index) {entryArray[index] = this.entries[index];}for(var index=this.size; index < prime; ++index) {entryArray[index] = newEntry();}for(var index1=0; index1 < this.size; ++index1) {var index2=entryArray[index1].hashCode % prime;entryArray[index1].next = numArray[index2];numArray[index2] = index1;}this.buckets = numArray;this.entries = entryArray;};dictionaryProto.remove = function(key){if(this.buckets){var num=getHashCode(key) & 2147483647, index1=num % this.buckets.length, index2=-1;for(var index3=this.buckets[index1]; index3 >= 0; index3 = this.entries[index3].next) {if(this.entries[index3].hashCode === num && this.comparer(this.entries[index3].key, key)){if(index2 < 0){this.buckets[index1] = this.entries[index3].next;}else {this.entries[index2].next = this.entries[index3].next;}this.entries[index3].hashCode = -1;this.entries[index3].next = this.freeList;this.entries[index3].key = null;this.entries[index3].value = null;this.freeList = index3;++this.freeCount;return true;}else {index2 = index3;}}}return false;};dictionaryProto.clear = function(){var index, len;if(this.size <= 0){return;}for(index = 0, len = this.buckets.length; index < len; ++index) {this.buckets[index] = -1;}for(index = 0; index < this.size; ++index) {this.entries[index] = newEntry();}this.freeList = -1;this.size = 0;};dictionaryProto._findEntry = function(key){if(this.buckets){var num=getHashCode(key) & 2147483647;for(var index=this.buckets[num % this.buckets.length]; index >= 0; index = this.entries[index].next) {if(this.entries[index].hashCode === num && this.comparer(this.entries[index].key, key)){return index;}}}return -1;};dictionaryProto.count = function(){return this.size - this.freeCount;};dictionaryProto.tryGetValue = function(key){var entry=this._findEntry(key);return entry >= 0?this.entries[entry].value:undefined;};dictionaryProto.getValues = function(){var index=0, results=[];if(this.entries){for(var index1=0; index1 < this.size; index1++) {if(this.entries[index1].hashCode >= 0){results[index++] = this.entries[index1].value;}}}return results;};dictionaryProto.get = function(key){var entry=this._findEntry(key);if(entry >= 0){return this.entries[entry].value;}throw new Error(noSuchkey);};dictionaryProto.set = function(key, value){this._insert(key, value, false);};dictionaryProto.containskey = function(key){return this._findEntry(key) >= 0;};return Dictionary;})();observableProto.join = function(right, leftDurationSelector, rightDurationSelector, resultSelector){var left=this;return new AnonymousObservable(function(observer){var group=new CompositeDisposable();var leftDone=false, rightDone=false;var leftId=0, rightId=0;var leftMap=new Dictionary(), rightMap=new Dictionary();group.add(left.subscribe(function(value){var id=leftId++;var md=new SingleAssignmentDisposable();leftMap.add(id, value);group.add(md);var expire=function expire(){leftMap.remove(id) && leftMap.count() === 0 && leftDone && observer.onCompleted();group.remove(md);};var duration;try{duration = leftDurationSelector(value);}catch(e) {observer.onError(e);return;}md.setDisposable(duration.take(1).subscribe(noop, observer.onError.bind(observer), expire));rightMap.getValues().forEach(function(v){var result;try{result = resultSelector(value, v);}catch(exn) {observer.onError(exn);return;}observer.onNext(result);});}, observer.onError.bind(observer), function(){leftDone = true;(rightDone || leftMap.count() === 0) && observer.onCompleted();}));group.add(right.subscribe(function(value){var id=rightId++;var md=new SingleAssignmentDisposable();rightMap.add(id, value);group.add(md);var expire=function expire(){rightMap.remove(id) && rightMap.count() === 0 && rightDone && observer.onCompleted();group.remove(md);};var duration;try{duration = rightDurationSelector(value);}catch(e) {observer.onError(e);return;}md.setDisposable(duration.take(1).subscribe(noop, observer.onError.bind(observer), expire));leftMap.getValues().forEach(function(v){var result;try{result = resultSelector(v, value);}catch(exn) {observer.onError(exn);return;}observer.onNext(result);});}, observer.onError.bind(observer), function(){rightDone = true;(leftDone || rightMap.count() === 0) && observer.onCompleted();}));return group;}, left);};observableProto.groupJoin = function(right, leftDurationSelector, rightDurationSelector, resultSelector){var left=this;return new AnonymousObservable(function(observer){var group=new CompositeDisposable();var r=new RefCountDisposable(group);var leftMap=new Dictionary(), rightMap=new Dictionary();var leftId=0, rightId=0;function handleError(e){return function(v){v.onError(e);};};group.add(left.subscribe(function(value){var s=new Subject();var id=leftId++;leftMap.add(id, s);var result;try{result = resultSelector(value, addRef(s, r));}catch(e) {leftMap.getValues().forEach(handleError(e));observer.onError(e);return;}observer.onNext(result);rightMap.getValues().forEach(function(v){s.onNext(v);});var md=new SingleAssignmentDisposable();group.add(md);var expire=function expire(){leftMap.remove(id) && s.onCompleted();group.remove(md);};var duration;try{duration = leftDurationSelector(value);}catch(e) {leftMap.getValues().forEach(handleError(e));observer.onError(e);return;}md.setDisposable(duration.take(1).subscribe(noop, function(e){leftMap.getValues().forEach(handleError(e));observer.onError(e);}, expire));}, function(e){leftMap.getValues().forEach(handleError(e));observer.onError(e);}, observer.onCompleted.bind(observer)));group.add(right.subscribe(function(value){var id=rightId++;rightMap.add(id, value);var md=new SingleAssignmentDisposable();group.add(md);var expire=function expire(){rightMap.remove(id);group.remove(md);};var duration;try{duration = rightDurationSelector(value);}catch(e) {leftMap.getValues().forEach(handleError(e));observer.onError(e);return;}md.setDisposable(duration.take(1).subscribe(noop, function(e){leftMap.getValues().forEach(handleError(e));observer.onError(e);}, expire));leftMap.getValues().forEach(function(v){v.onNext(value);});}, function(e){leftMap.getValues().forEach(handleError(e));observer.onError(e);}));return r;}, left);};observableProto.buffer = function(bufferOpeningsOrClosingSelector, bufferClosingSelector){return this.window.apply(this, arguments).selectMany(function(x){return x.toArray();});};observableProto.window = function(windowOpeningsOrClosingSelector, windowClosingSelector){if(arguments.length === 1 && typeof arguments[0] !== 'function'){return observableWindowWithBoundaries.call(this, windowOpeningsOrClosingSelector);}return typeof windowOpeningsOrClosingSelector === 'function'?observableWindowWithClosingSelector.call(this, windowOpeningsOrClosingSelector):observableWindowWithOpenings.call(this, windowOpeningsOrClosingSelector, windowClosingSelector);};function observableWindowWithOpenings(windowOpenings, windowClosingSelector){return windowOpenings.groupJoin(this, windowClosingSelector, observableEmpty, function(_, win){return win;});}function observableWindowWithBoundaries(windowBoundaries){var source=this;return new AnonymousObservable(function(observer){var win=new Subject(), d=new CompositeDisposable(), r=new RefCountDisposable(d);observer.onNext(addRef(win, r));d.add(source.subscribe(function(x){win.onNext(x);}, function(err){win.onError(err);observer.onError(err);}, function(){win.onCompleted();observer.onCompleted();}));isPromise(windowBoundaries) && (windowBoundaries = observableFromPromise(windowBoundaries));d.add(windowBoundaries.subscribe(function(w){win.onCompleted();win = new Subject();observer.onNext(addRef(win, r));}, function(err){win.onError(err);observer.onError(err);}, function(){win.onCompleted();observer.onCompleted();}));return r;}, source);}function observableWindowWithClosingSelector(windowClosingSelector){var source=this;return new AnonymousObservable(function(observer){var m=new SerialDisposable(), d=new CompositeDisposable(m), r=new RefCountDisposable(d), win=new Subject();observer.onNext(addRef(win, r));d.add(source.subscribe(function(x){win.onNext(x);}, function(err){win.onError(err);observer.onError(err);}, function(){win.onCompleted();observer.onCompleted();}));function createWindowClose(){var windowClose;try{windowClose = windowClosingSelector();}catch(e) {observer.onError(e);return;}isPromise(windowClose) && (windowClose = observableFromPromise(windowClose));var m1=new SingleAssignmentDisposable();m.setDisposable(m1);m1.setDisposable(windowClose.take(1).subscribe(noop, function(err){win.onError(err);observer.onError(err);}, function(){win.onCompleted();win = new Subject();observer.onNext(addRef(win, r));createWindowClose();}));}createWindowClose();return r;}, source);}observableProto.pairwise = function(){var source=this;return new AnonymousObservable(function(observer){var previous, hasPrevious=false;return source.subscribe(function(x){if(hasPrevious){observer.onNext([previous, x]);}else {hasPrevious = true;}previous = x;}, observer.onError.bind(observer), observer.onCompleted.bind(observer));}, source);};observableProto.partition = function(predicate, thisArg){return [this.filter(predicate, thisArg), this.filter(function(x, i, o){return !predicate.call(thisArg, x, i, o);})];};function enumerableWhile(condition, source){return new Enumerable(function(){return new Enumerator(function(){return condition()?{done:false, value:source}:{done:true, value:undefined};});});}observableProto.letBind = observableProto['let'] = function(func){return func(this);};Observable['if'] = Observable.ifThen = function(condition, thenSource, elseSourceOrScheduler){return observableDefer(function(){elseSourceOrScheduler || (elseSourceOrScheduler = observableEmpty());isPromise(thenSource) && (thenSource = observableFromPromise(thenSource));isPromise(elseSourceOrScheduler) && (elseSourceOrScheduler = observableFromPromise(elseSourceOrScheduler));typeof elseSourceOrScheduler.now === 'function' && (elseSourceOrScheduler = observableEmpty(elseSourceOrScheduler));return condition()?thenSource:elseSourceOrScheduler;});};Observable['for'] = Observable.forIn = function(sources, resultSelector, thisArg){return enumerableOf(sources, resultSelector, thisArg).concat();};var observableWhileDo=Observable['while'] = Observable.whileDo = function(condition, source){isPromise(source) && (source = observableFromPromise(source));return enumerableWhile(condition, source).concat();};observableProto.doWhile = function(condition){return observableConcat([this, observableWhileDo(condition, this)]);};Observable['case'] = Observable.switchCase = function(selector, sources, defaultSourceOrScheduler){return observableDefer(function(){isPromise(defaultSourceOrScheduler) && (defaultSourceOrScheduler = observableFromPromise(defaultSourceOrScheduler));defaultSourceOrScheduler || (defaultSourceOrScheduler = observableEmpty());typeof defaultSourceOrScheduler.now === 'function' && (defaultSourceOrScheduler = observableEmpty(defaultSourceOrScheduler));var result=sources[selector()];isPromise(result) && (result = observableFromPromise(result));return result || defaultSourceOrScheduler;});};observableProto.expand = function(selector, scheduler){isScheduler(scheduler) || (scheduler = immediateScheduler);var source=this;return new AnonymousObservable(function(observer){var q=[], m=new SerialDisposable(), d=new CompositeDisposable(m), activeCount=0, isAcquired=false;var ensureActive=function ensureActive(){var isOwner=false;if(q.length > 0){isOwner = !isAcquired;isAcquired = true;}if(isOwner){m.setDisposable(scheduler.scheduleRecursive(function(self){var work;if(q.length > 0){work = q.shift();}else {isAcquired = false;return;}var m1=new SingleAssignmentDisposable();d.add(m1);m1.setDisposable(work.subscribe(function(x){observer.onNext(x);var result=null;try{result = selector(x);}catch(e) {observer.onError(e);}q.push(result);activeCount++;ensureActive();}, observer.onError.bind(observer), function(){d.remove(m1);activeCount--;if(activeCount === 0){observer.onCompleted();}}));self();}));}};q.push(source);activeCount++;ensureActive();return d;}, this);};Observable.forkJoin = function(){var allSources=[];if(Array.isArray(arguments[0])){allSources = arguments[0];}else {for(var i=0, len=arguments.length; i < len; i++) {allSources.push(arguments[i]);}}return new AnonymousObservable(function(subscriber){var count=allSources.length;if(count === 0){subscriber.onCompleted();return disposableEmpty;}var group=new CompositeDisposable(), finished=false, hasResults=new Array(count), hasCompleted=new Array(count), results=new Array(count);for(var idx=0; idx < count; idx++) {(function(i){var source=allSources[i];isPromise(source) && (source = observableFromPromise(source));group.add(source.subscribe(function(value){if(!finished){hasResults[i] = true;results[i] = value;}}, function(e){finished = true;subscriber.onError(e);group.dispose();}, function(){if(!finished){if(!hasResults[i]){subscriber.onCompleted();return;}hasCompleted[i] = true;for(var ix=0; ix < count; ix++) {if(!hasCompleted[ix]){return;}}finished = true;subscriber.onNext(results);subscriber.onCompleted();}}));})(idx);}return group;});};observableProto.forkJoin = function(second, resultSelector){var first=this;return new AnonymousObservable(function(observer){var leftStopped=false, rightStopped=false, hasLeft=false, hasRight=false, lastLeft, lastRight, leftSubscription=new SingleAssignmentDisposable(), rightSubscription=new SingleAssignmentDisposable();isPromise(second) && (second = observableFromPromise(second));leftSubscription.setDisposable(first.subscribe(function(left){hasLeft = true;lastLeft = left;}, function(err){rightSubscription.dispose();observer.onError(err);}, function(){leftStopped = true;if(rightStopped){if(!hasLeft){observer.onCompleted();}else if(!hasRight){observer.onCompleted();}else {var result;try{result = resultSelector(lastLeft, lastRight);}catch(e) {observer.onError(e);return;}observer.onNext(result);observer.onCompleted();}}}));rightSubscription.setDisposable(second.subscribe(function(right){hasRight = true;lastRight = right;}, function(err){leftSubscription.dispose();observer.onError(err);}, function(){rightStopped = true;if(leftStopped){if(!hasLeft){observer.onCompleted();}else if(!hasRight){observer.onCompleted();}else {var result;try{result = resultSelector(lastLeft, lastRight);}catch(e) {observer.onError(e);return;}observer.onNext(result);observer.onCompleted();}}}));return new CompositeDisposable(leftSubscription, rightSubscription);}, first);};observableProto.manySelect = function(selector, scheduler){isScheduler(scheduler) || (scheduler = immediateScheduler);var source=this;return observableDefer(function(){var chain;return source.map(function(x){var curr=new ChainObservable(x);chain && chain.onNext(x);chain = curr;return curr;}).tap(noop, function(e){chain && chain.onError(e);}, function(){chain && chain.onCompleted();}).observeOn(scheduler).map(selector);}, source);};var ChainObservable=(function(__super__){function subscribe(observer){var self=this, g=new CompositeDisposable();g.add(currentThreadScheduler.schedule(function(){observer.onNext(self.head);g.add(self.tail.mergeAll().subscribe(observer));}));return g;}inherits(ChainObservable, __super__);function ChainObservable(head){__super__.call(this, subscribe);this.head = head;this.tail = new AsyncSubject();}addProperties(ChainObservable.prototype, Observer, {onCompleted:function onCompleted(){this.onNext(Observable.empty());}, onError:function onError(e){this.onNext(Observable.throwError(e));}, onNext:function onNext(v){this.tail.onNext(v);this.tail.onCompleted();}});return ChainObservable;})(Observable);var Map=root.Map || (function(){function Map(){this._keys = [];this._values = [];}Map.prototype.get = function(key){var i=this._keys.indexOf(key);return i !== -1?this._values[i]:undefined;};Map.prototype.set = function(key, value){var i=this._keys.indexOf(key);i !== -1 && (this._values[i] = value);this._values[this._keys.push(key) - 1] = value;};Map.prototype.forEach = function(callback, thisArg){for(var i=0, len=this._keys.length; i < len; i++) {callback.call(thisArg, this._values[i], this._keys[i]);}};return Map;})();function Pattern(patterns){this.patterns = patterns;}Pattern.prototype.and = function(other){return new Pattern(this.patterns.concat(other));};Pattern.prototype.thenDo = function(selector){return new Plan(this, selector);};function Plan(expression, selector){this.expression = expression;this.selector = selector;}Plan.prototype.activate = function(externalSubscriptions, observer, deactivate){var self=this;var joinObservers=[];for(var i=0, len=this.expression.patterns.length; i < len; i++) {joinObservers.push(planCreateObserver(externalSubscriptions, this.expression.patterns[i], observer.onError.bind(observer)));}var activePlan=new ActivePlan(joinObservers, function(){var result;try{result = self.selector.apply(self, arguments);}catch(e) {observer.onError(e);return;}observer.onNext(result);}, function(){for(var j=0, jlen=joinObservers.length; j < jlen; j++) {joinObservers[j].removeActivePlan(activePlan);}deactivate(activePlan);});for(i = 0, len = joinObservers.length; i < len; i++) {joinObservers[i].addActivePlan(activePlan);}return activePlan;};function planCreateObserver(externalSubscriptions, observable, onError){var entry=externalSubscriptions.get(observable);if(!entry){var observer=new JoinObserver(observable, onError);externalSubscriptions.set(observable, observer);return observer;}return entry;}function ActivePlan(joinObserverArray, onNext, onCompleted){this.joinObserverArray = joinObserverArray;this.onNext = onNext;this.onCompleted = onCompleted;this.joinObservers = new Map();for(var i=0, len=this.joinObserverArray.length; i < len; i++) {var joinObserver=this.joinObserverArray[i];this.joinObservers.set(joinObserver, joinObserver);}}ActivePlan.prototype.dequeue = function(){this.joinObservers.forEach(function(v){v.queue.shift();});};ActivePlan.prototype.match = function(){var i, len, hasValues=true;for(i = 0, len = this.joinObserverArray.length; i < len; i++) {if(this.joinObserverArray[i].queue.length === 0){hasValues = false;break;}}if(hasValues){var firstValues=[], isCompleted=false;for(i = 0, len = this.joinObserverArray.length; i < len; i++) {firstValues.push(this.joinObserverArray[i].queue[0]);this.joinObserverArray[i].queue[0].kind === 'C' && (isCompleted = true);}if(isCompleted){this.onCompleted();}else {this.dequeue();var values=[];for(i = 0, len = firstValues.length; i < firstValues.length; i++) {values.push(firstValues[i].value);}this.onNext.apply(this, values);}}};var JoinObserver=(function(__super__){inherits(JoinObserver, __super__);function JoinObserver(source, onError){__super__.call(this);this.source = source;this.onError = onError;this.queue = [];this.activePlans = [];this.subscription = new SingleAssignmentDisposable();this.isDisposed = false;}var JoinObserverPrototype=JoinObserver.prototype;JoinObserverPrototype.next = function(notification){if(!this.isDisposed){if(notification.kind === 'E'){return this.onError(notification.exception);}this.queue.push(notification);var activePlans=this.activePlans.slice(0);for(var i=0, len=activePlans.length; i < len; i++) {activePlans[i].match();}}};JoinObserverPrototype.error = noop;JoinObserverPrototype.completed = noop;JoinObserverPrototype.addActivePlan = function(activePlan){this.activePlans.push(activePlan);};JoinObserverPrototype.subscribe = function(){this.subscription.setDisposable(this.source.materialize().subscribe(this));};JoinObserverPrototype.removeActivePlan = function(activePlan){this.activePlans.splice(this.activePlans.indexOf(activePlan), 1);this.activePlans.length === 0 && this.dispose();};JoinObserverPrototype.dispose = function(){__super__.prototype.dispose.call(this);if(!this.isDisposed){this.isDisposed = true;this.subscription.dispose();}};return JoinObserver;})(AbstractObserver);observableProto.and = function(right){return new Pattern([this, right]);};observableProto.thenDo = function(selector){return new Pattern([this]).thenDo(selector);};Observable.when = function(){var len=arguments.length, plans;if(Array.isArray(arguments[0])){plans = arguments[0];}else {plans = new Array(len);for(var i=0; i < len; i++) {plans[i] = arguments[i];}}return new AnonymousObservable(function(o){var activePlans=[], externalSubscriptions=new Map();var outObserver=observerCreate(function(x){o.onNext(x);}, function(err){externalSubscriptions.forEach(function(v){v.onError(err);});o.onError(err);}, function(x){o.onCompleted();});try{for(var i=0, len=plans.length; i < len; i++) {activePlans.push(plans[i].activate(externalSubscriptions, outObserver, function(activePlan){var idx=activePlans.indexOf(activePlan);activePlans.splice(idx, 1);activePlans.length === 0 && o.onCompleted();}));}}catch(e) {observableThrow(e).subscribe(o);}var group=new CompositeDisposable();externalSubscriptions.forEach(function(joinObserver){joinObserver.subscribe();group.add(joinObserver);});return group;});};function observableTimerDate(dueTime, scheduler){return new AnonymousObservable(function(observer){return scheduler.scheduleWithAbsolute(dueTime, function(){observer.onNext(0);observer.onCompleted();});});}function observableTimerDateAndPeriod(dueTime, period, scheduler){return new AnonymousObservable(function(observer){var d=dueTime, p=normalizeTime(period);return scheduler.scheduleRecursiveWithAbsoluteAndState(0, d, function(count, self){if(p > 0){var now=scheduler.now();d = d + p;d <= now && (d = now + p);}observer.onNext(count);self(count + 1, d);});});}function observableTimerTimeSpan(dueTime, scheduler){return new AnonymousObservable(function(observer){return scheduler.scheduleWithRelative(normalizeTime(dueTime), function(){observer.onNext(0);observer.onCompleted();});});}function observableTimerTimeSpanAndPeriod(dueTime, period, scheduler){return dueTime === period?new AnonymousObservable(function(observer){return scheduler.schedulePeriodicWithState(0, period, function(count){observer.onNext(count);return count + 1;});}):observableDefer(function(){return observableTimerDateAndPeriod(scheduler.now() + dueTime, period, scheduler);});}var observableinterval=Observable.interval = function(period, scheduler){return observableTimerTimeSpanAndPeriod(period, period, isScheduler(scheduler)?scheduler:timeoutScheduler);};var observableTimer=Observable.timer = function(dueTime, periodOrScheduler, scheduler){var period;isScheduler(scheduler) || (scheduler = timeoutScheduler);if(periodOrScheduler !== undefined && typeof periodOrScheduler === 'number'){period = periodOrScheduler;}else if(isScheduler(periodOrScheduler)){scheduler = periodOrScheduler;}if(dueTime instanceof Date && period === undefined){return observableTimerDate(dueTime.getTime(), scheduler);}if(dueTime instanceof Date && period !== undefined){period = periodOrScheduler;return observableTimerDateAndPeriod(dueTime.getTime(), period, scheduler);}return period === undefined?observableTimerTimeSpan(dueTime, scheduler):observableTimerTimeSpanAndPeriod(dueTime, period, scheduler);};function observableDelayTimeSpan(source, dueTime, scheduler){return new AnonymousObservable(function(observer){var active=false, cancelable=new SerialDisposable(), exception=null, q=[], running=false, subscription;subscription = source.materialize().timestamp(scheduler).subscribe(function(notification){var d, shouldRun;if(notification.value.kind === 'E'){q = [];q.push(notification);exception = notification.value.exception;shouldRun = !running;}else {q.push({value:notification.value, timestamp:notification.timestamp + dueTime});shouldRun = !active;active = true;}if(shouldRun){if(exception !== null){observer.onError(exception);}else {d = new SingleAssignmentDisposable();cancelable.setDisposable(d);d.setDisposable(scheduler.scheduleRecursiveWithRelative(dueTime, function(self){var e, recurseDueTime, result, shouldRecurse;if(exception !== null){return;}running = true;do {result = null;if(q.length > 0 && q[0].timestamp - scheduler.now() <= 0){result = q.shift().value;}if(result !== null){result.accept(observer);}}while(result !== null);shouldRecurse = false;recurseDueTime = 0;if(q.length > 0){shouldRecurse = true;recurseDueTime = Math.max(0, q[0].timestamp - scheduler.now());}else {active = false;}e = exception;running = false;if(e !== null){observer.onError(e);}else if(shouldRecurse){self(recurseDueTime);}}));}}});return new CompositeDisposable(subscription, cancelable);}, source);}function observableDelayDate(source, dueTime, scheduler){return observableDefer(function(){return observableDelayTimeSpan(source, dueTime - scheduler.now(), scheduler);});}observableProto.delay = function(dueTime, scheduler){isScheduler(scheduler) || (scheduler = timeoutScheduler);return dueTime instanceof Date?observableDelayDate(this, dueTime.getTime(), scheduler):observableDelayTimeSpan(this, dueTime, scheduler);};observableProto.debounce = observableProto.throttleWithTimeout = function(dueTime, scheduler){isScheduler(scheduler) || (scheduler = timeoutScheduler);var source=this;return new AnonymousObservable(function(observer){var cancelable=new SerialDisposable(), hasvalue=false, value, id=0;var subscription=source.subscribe(function(x){hasvalue = true;value = x;id++;var currentId=id, d=new SingleAssignmentDisposable();cancelable.setDisposable(d);d.setDisposable(scheduler.scheduleWithRelative(dueTime, function(){hasvalue && id === currentId && observer.onNext(value);hasvalue = false;}));}, function(e){cancelable.dispose();observer.onError(e);hasvalue = false;id++;}, function(){cancelable.dispose();hasvalue && observer.onNext(value);observer.onCompleted();hasvalue = false;id++;});return new CompositeDisposable(subscription, cancelable);}, this);};observableProto.throttle = function(dueTime, scheduler){return this.debounce(dueTime, scheduler);};observableProto.windowWithTime = function(timeSpan, timeShiftOrScheduler, scheduler){var source=this, timeShift;timeShiftOrScheduler == null && (timeShift = timeSpan);isScheduler(scheduler) || (scheduler = timeoutScheduler);if(typeof timeShiftOrScheduler === 'number'){timeShift = timeShiftOrScheduler;}else if(isScheduler(timeShiftOrScheduler)){timeShift = timeSpan;scheduler = timeShiftOrScheduler;}return new AnonymousObservable(function(observer){var groupDisposable, nextShift=timeShift, nextSpan=timeSpan, q=[], refCountDisposable, timerD=new SerialDisposable(), totalTime=0;groupDisposable = new CompositeDisposable(timerD), refCountDisposable = new RefCountDisposable(groupDisposable);function createTimer(){var m=new SingleAssignmentDisposable(), isSpan=false, isShift=false;timerD.setDisposable(m);if(nextSpan === nextShift){isSpan = true;isShift = true;}else if(nextSpan < nextShift){isSpan = true;}else {isShift = true;}var newTotalTime=isSpan?nextSpan:nextShift, ts=newTotalTime - totalTime;totalTime = newTotalTime;if(isSpan){nextSpan += timeShift;}if(isShift){nextShift += timeShift;}m.setDisposable(scheduler.scheduleWithRelative(ts, function(){if(isShift){var s=new Subject();q.push(s);observer.onNext(addRef(s, refCountDisposable));}isSpan && q.shift().onCompleted();createTimer();}));};q.push(new Subject());observer.onNext(addRef(q[0], refCountDisposable));createTimer();groupDisposable.add(source.subscribe(function(x){for(var i=0, len=q.length; i < len; i++) {q[i].onNext(x);}}, function(e){for(var i=0, len=q.length; i < len; i++) {q[i].onError(e);}observer.onError(e);}, function(){for(var i=0, len=q.length; i < len; i++) {q[i].onCompleted();}observer.onCompleted();}));return refCountDisposable;}, source);};observableProto.windowWithTimeOrCount = function(timeSpan, count, scheduler){var source=this;isScheduler(scheduler) || (scheduler = timeoutScheduler);return new AnonymousObservable(function(observer){var timerD=new SerialDisposable(), groupDisposable=new CompositeDisposable(timerD), refCountDisposable=new RefCountDisposable(groupDisposable), n=0, windowId=0, s=new Subject();function createTimer(id){var m=new SingleAssignmentDisposable();timerD.setDisposable(m);m.setDisposable(scheduler.scheduleWithRelative(timeSpan, function(){if(id !== windowId){return;}n = 0;var newId=++windowId;s.onCompleted();s = new Subject();observer.onNext(addRef(s, refCountDisposable));createTimer(newId);}));}observer.onNext(addRef(s, refCountDisposable));createTimer(0);groupDisposable.add(source.subscribe(function(x){var newId=0, newWindow=false;s.onNext(x);if(++n === count){newWindow = true;n = 0;newId = ++windowId;s.onCompleted();s = new Subject();observer.onNext(addRef(s, refCountDisposable));}newWindow && createTimer(newId);}, function(e){s.onError(e);observer.onError(e);}, function(){s.onCompleted();observer.onCompleted();}));return refCountDisposable;}, source);};observableProto.bufferWithTime = function(timeSpan, timeShiftOrScheduler, scheduler){return this.windowWithTime.apply(this, arguments).selectMany(function(x){return x.toArray();});};observableProto.bufferWithTimeOrCount = function(timeSpan, count, scheduler){return this.windowWithTimeOrCount(timeSpan, count, scheduler).selectMany(function(x){return x.toArray();});};observableProto.timeInterval = function(scheduler){var source=this;isScheduler(scheduler) || (scheduler = timeoutScheduler);return observableDefer(function(){var last=scheduler.now();return source.map(function(x){var now=scheduler.now(), span=now - last;last = now;return {value:x, interval:span};});});};observableProto.timestamp = function(scheduler){isScheduler(scheduler) || (scheduler = timeoutScheduler);return this.map(function(x){return {value:x, timestamp:scheduler.now()};});};function sampleObservable(source, sampler){return new AnonymousObservable(function(observer){var atEnd, value, hasValue;function sampleSubscribe(){if(hasValue){hasValue = false;observer.onNext(value);}atEnd && observer.onCompleted();}return new CompositeDisposable(source.subscribe(function(newValue){hasValue = true;value = newValue;}, observer.onError.bind(observer), function(){atEnd = true;}), sampler.subscribe(sampleSubscribe, observer.onError.bind(observer), sampleSubscribe));}, source);}observableProto.sample = observableProto.throttleLatest = function(intervalOrSampler, scheduler){isScheduler(scheduler) || (scheduler = timeoutScheduler);return typeof intervalOrSampler === 'number'?sampleObservable(this, observableinterval(intervalOrSampler, scheduler)):sampleObservable(this, intervalOrSampler);};observableProto.timeout = function(dueTime, other, scheduler){(other == null || typeof other === 'string') && (other = observableThrow(new Error(other || 'Timeout')));isScheduler(scheduler) || (scheduler = timeoutScheduler);var source=this, schedulerMethod=dueTime instanceof Date?'scheduleWithAbsolute':'scheduleWithRelative';return new AnonymousObservable(function(observer){var id=0, original=new SingleAssignmentDisposable(), subscription=new SerialDisposable(), switched=false, timer=new SerialDisposable();subscription.setDisposable(original);function createTimer(){var myId=id;timer.setDisposable(scheduler[schedulerMethod](dueTime, function(){if(id === myId){isPromise(other) && (other = observableFromPromise(other));subscription.setDisposable(other.subscribe(observer));}}));}createTimer();original.setDisposable(source.subscribe(function(x){if(!switched){id++;observer.onNext(x);createTimer();}}, function(e){if(!switched){id++;observer.onError(e);}}, function(){if(!switched){id++;observer.onCompleted();}}));return new CompositeDisposable(subscription, timer);}, source);};Observable.generateWithAbsoluteTime = function(initialState, condition, iterate, resultSelector, timeSelector, scheduler){isScheduler(scheduler) || (scheduler = timeoutScheduler);return new AnonymousObservable(function(observer){var first=true, hasResult=false, result, state=initialState, time;return scheduler.scheduleRecursiveWithAbsolute(scheduler.now(), function(self){hasResult && observer.onNext(result);try{if(first){first = false;}else {state = iterate(state);}hasResult = condition(state);if(hasResult){result = resultSelector(state);time = timeSelector(state);}}catch(e) {observer.onError(e);return;}if(hasResult){self(time);}else {observer.onCompleted();}});});};Observable.generateWithRelativeTime = function(initialState, condition, iterate, resultSelector, timeSelector, scheduler){isScheduler(scheduler) || (scheduler = timeoutScheduler);return new AnonymousObservable(function(observer){var first=true, hasResult=false, result, state=initialState, time;return scheduler.scheduleRecursiveWithRelative(0, function(self){hasResult && observer.onNext(result);try{if(first){first = false;}else {state = iterate(state);}hasResult = condition(state);if(hasResult){result = resultSelector(state);time = timeSelector(state);}}catch(e) {observer.onError(e);return;}if(hasResult){self(time);}else {observer.onCompleted();}});});};observableProto.delaySubscription = function(dueTime, scheduler){var scheduleMethod=dueTime instanceof Date?'scheduleWithAbsolute':'scheduleWithRelative';var source=this;isScheduler(scheduler) || (scheduler = timeoutScheduler);return new AnonymousObservable(function(o){var d=new SerialDisposable();d.setDisposable(scheduler[scheduleMethod](dueTime, function(){d.setDisposable(source.subscribe(o));}));return d;}, this);};observableProto.delayWithSelector = function(subscriptionDelay, delayDurationSelector){var source=this, subDelay, selector;if(isFunction(subscriptionDelay)){selector = subscriptionDelay;}else {subDelay = subscriptionDelay;selector = delayDurationSelector;}return new AnonymousObservable(function(observer){var delays=new CompositeDisposable(), atEnd=false, subscription=new SerialDisposable();function start(){subscription.setDisposable(source.subscribe(function(x){var delay=tryCatch(selector)(x);if(delay === errorObj){return observer.onError(delay.e);}var d=new SingleAssignmentDisposable();delays.add(d);d.setDisposable(delay.subscribe(function(){observer.onNext(x);delays.remove(d);done();}, function(e){observer.onError(e);}, function(){observer.onNext(x);delays.remove(d);done();}));}, function(e){observer.onError(e);}, function(){atEnd = true;subscription.dispose();done();}));}function done(){atEnd && delays.length === 0 && observer.onCompleted();}if(!subDelay){start();}else {subscription.setDisposable(subDelay.subscribe(start, function(e){observer.onError(e);}, start));}return new CompositeDisposable(subscription, delays);}, this);};observableProto.timeoutWithSelector = function(firstTimeout, timeoutdurationSelector, other){if(arguments.length === 1){timeoutdurationSelector = firstTimeout;firstTimeout = observableNever();}other || (other = observableThrow(new Error('Timeout')));var source=this;return new AnonymousObservable(function(observer){var subscription=new SerialDisposable(), timer=new SerialDisposable(), original=new SingleAssignmentDisposable();subscription.setDisposable(original);var id=0, switched=false;function setTimer(timeout){var myId=id;function timerWins(){return id === myId;}var d=new SingleAssignmentDisposable();timer.setDisposable(d);d.setDisposable(timeout.subscribe(function(){timerWins() && subscription.setDisposable(other.subscribe(observer));d.dispose();}, function(e){timerWins() && observer.onError(e);}, function(){timerWins() && subscription.setDisposable(other.subscribe(observer));}));};setTimer(firstTimeout);function observerWins(){var res=!switched;if(res){id++;}return res;}original.setDisposable(source.subscribe(function(x){if(observerWins()){observer.onNext(x);var timeout;try{timeout = timeoutdurationSelector(x);}catch(e) {observer.onError(e);return;}setTimer(isPromise(timeout)?observableFromPromise(timeout):timeout);}}, function(e){observerWins() && observer.onError(e);}, function(){observerWins() && observer.onCompleted();}));return new CompositeDisposable(subscription, timer);}, source);};observableProto.debounceWithSelector = function(durationSelector){var source=this;return new AnonymousObservable(function(observer){var value, hasValue=false, cancelable=new SerialDisposable(), id=0;var subscription=source.subscribe(function(x){var throttle;try{throttle = durationSelector(x);}catch(e) {observer.onError(e);return;}isPromise(throttle) && (throttle = observableFromPromise(throttle));hasValue = true;value = x;id++;var currentid=id, d=new SingleAssignmentDisposable();cancelable.setDisposable(d);d.setDisposable(throttle.subscribe(function(){hasValue && id === currentid && observer.onNext(value);hasValue = false;d.dispose();}, observer.onError.bind(observer), function(){hasValue && id === currentid && observer.onNext(value);hasValue = false;d.dispose();}));}, function(e){cancelable.dispose();observer.onError(e);hasValue = false;id++;}, function(){cancelable.dispose();hasValue && observer.onNext(value);observer.onCompleted();hasValue = false;id++;});return new CompositeDisposable(subscription, cancelable);}, source);};observableProto.throttleWithSelector = function(durationSelector){return this.debounceWithSelector(durationSelector);};observableProto.skipLastWithTime = function(duration, scheduler){isScheduler(scheduler) || (scheduler = timeoutScheduler);var source=this;return new AnonymousObservable(function(o){var q=[];return source.subscribe(function(x){var now=scheduler.now();q.push({interval:now, value:x});while(q.length > 0 && now - q[0].interval >= duration) {o.onNext(q.shift().value);}}, function(e){o.onError(e);}, function(){var now=scheduler.now();while(q.length > 0 && now - q[0].interval >= duration) {o.onNext(q.shift().value);}o.onCompleted();});}, source);};observableProto.takeLastWithTime = function(duration, scheduler){var source=this;isScheduler(scheduler) || (scheduler = timeoutScheduler);return new AnonymousObservable(function(o){var q=[];return source.subscribe(function(x){var now=scheduler.now();q.push({interval:now, value:x});while(q.length > 0 && now - q[0].interval >= duration) {q.shift();}}, function(e){o.onError(e);}, function(){var now=scheduler.now();while(q.length > 0) {var next=q.shift();if(now - next.interval <= duration){o.onNext(next.value);}}o.onCompleted();});}, source);};observableProto.takeLastBufferWithTime = function(duration, scheduler){var source=this;isScheduler(scheduler) || (scheduler = timeoutScheduler);return new AnonymousObservable(function(o){var q=[];return source.subscribe(function(x){var now=scheduler.now();q.push({interval:now, value:x});while(q.length > 0 && now - q[0].interval >= duration) {q.shift();}}, function(e){o.onError(e);}, function(){var now=scheduler.now(), res=[];while(q.length > 0) {var next=q.shift();now - next.interval <= duration && res.push(next.value);}o.onNext(res);o.onCompleted();});}, source);};observableProto.takeWithTime = function(duration, scheduler){var source=this;isScheduler(scheduler) || (scheduler = timeoutScheduler);return new AnonymousObservable(function(o){return new CompositeDisposable(scheduler.scheduleWithRelative(duration, function(){o.onCompleted();}), source.subscribe(o));}, source);};observableProto.skipWithTime = function(duration, scheduler){var source=this;isScheduler(scheduler) || (scheduler = timeoutScheduler);return new AnonymousObservable(function(observer){var open=false;return new CompositeDisposable(scheduler.scheduleWithRelative(duration, function(){open = true;}), source.subscribe(function(x){open && observer.onNext(x);}, observer.onError.bind(observer), observer.onCompleted.bind(observer)));}, source);};observableProto.skipUntilWithTime = function(startTime, scheduler){isScheduler(scheduler) || (scheduler = timeoutScheduler);var source=this, schedulerMethod=startTime instanceof Date?'scheduleWithAbsolute':'scheduleWithRelative';return new AnonymousObservable(function(o){var open=false;return new CompositeDisposable(scheduler[schedulerMethod](startTime, function(){open = true;}), source.subscribe(function(x){open && o.onNext(x);}, function(e){o.onError(e);}, function(){o.onCompleted();}));}, source);};observableProto.takeUntilWithTime = function(endTime, scheduler){isScheduler(scheduler) || (scheduler = timeoutScheduler);var source=this, schedulerMethod=endTime instanceof Date?'scheduleWithAbsolute':'scheduleWithRelative';return new AnonymousObservable(function(o){return new CompositeDisposable(scheduler[schedulerMethod](endTime, function(){o.onCompleted();}), source.subscribe(o));}, source);};observableProto.throttleFirst = function(windowDuration, scheduler){isScheduler(scheduler) || (scheduler = timeoutScheduler);var duration=+windowDuration || 0;if(duration <= 0){throw new RangeError('windowDuration cannot be less or equal zero.');}var source=this;return new AnonymousObservable(function(o){var lastOnNext=0;return source.subscribe(function(x){var now=scheduler.now();if(lastOnNext === 0 || now - lastOnNext >= duration){lastOnNext = now;o.onNext(x);}}, function(e){o.onError(e);}, function(){o.onCompleted();});}, source);};observableProto.transduce = function(transducer){var source=this;function transformForObserver(o){return {'@@transducer/init':function transducerInit(){return o;}, '@@transducer/step':function transducerStep(obs, input){return obs.onNext(input);}, '@@transducer/result':function transducerResult(obs){return obs.onCompleted();}};}return new AnonymousObservable(function(o){var xform=transducer(transformForObserver(o));return source.subscribe(function(v){try{xform['@@transducer/step'](o, v);}catch(e) {o.onError(e);}}, function(e){o.onError(e);}, function(){xform['@@transducer/result'](o);});}, source);};observableProto.exclusive = function(){var sources=this;return new AnonymousObservable(function(observer){var hasCurrent=false, isStopped=false, m=new SingleAssignmentDisposable(), g=new CompositeDisposable();g.add(m);m.setDisposable(sources.subscribe(function(innerSource){if(!hasCurrent){hasCurrent = true;isPromise(innerSource) && (innerSource = observableFromPromise(innerSource));var innerSubscription=new SingleAssignmentDisposable();g.add(innerSubscription);innerSubscription.setDisposable(innerSource.subscribe(observer.onNext.bind(observer), observer.onError.bind(observer), function(){g.remove(innerSubscription);hasCurrent = false;if(isStopped && g.length === 1){observer.onCompleted();}}));}}, observer.onError.bind(observer), function(){isStopped = true;if(!hasCurrent && g.length === 1){observer.onCompleted();}}));return g;}, this);};observableProto.exclusiveMap = function(selector, thisArg){var sources=this, selectorFunc=bindCallback(selector, thisArg, 3);return new AnonymousObservable(function(observer){var index=0, hasCurrent=false, isStopped=true, m=new SingleAssignmentDisposable(), g=new CompositeDisposable();g.add(m);m.setDisposable(sources.subscribe(function(innerSource){if(!hasCurrent){hasCurrent = true;innerSubscription = new SingleAssignmentDisposable();g.add(innerSubscription);isPromise(innerSource) && (innerSource = observableFromPromise(innerSource));innerSubscription.setDisposable(innerSource.subscribe(function(x){var result;try{result = selectorFunc(x, index++, innerSource);}catch(e) {observer.onError(e);return;}observer.onNext(result);}, function(e){observer.onError(e);}, function(){g.remove(innerSubscription);hasCurrent = false;if(isStopped && g.length === 1){observer.onCompleted();}}));}}, function(e){observer.onError(e);}, function(){isStopped = true;if(g.length === 1 && !hasCurrent){observer.onCompleted();}}));return g;}, this);};Rx.VirtualTimeScheduler = (function(__super__){function localNow(){return this.toDateTimeOffset(this.clock);}function scheduleNow(state, action){return this.scheduleAbsoluteWithState(state, this.clock, action);}function scheduleRelative(state, dueTime, action){return this.scheduleRelativeWithState(state, this.toRelative(dueTime), action);}function scheduleAbsolute(state, dueTime, action){return this.scheduleRelativeWithState(state, this.toRelative(dueTime - this.now()), action);}function invokeAction(scheduler, action){action();return disposableEmpty;}inherits(VirtualTimeScheduler, __super__);function VirtualTimeScheduler(initialClock, comparer){this.clock = initialClock;this.comparer = comparer;this.isEnabled = false;this.queue = new PriorityQueue(1024);__super__.call(this, localNow, scheduleNow, scheduleRelative, scheduleAbsolute);}var VirtualTimeSchedulerPrototype=VirtualTimeScheduler.prototype;VirtualTimeSchedulerPrototype.add = notImplemented;VirtualTimeSchedulerPrototype.toDateTimeOffset = notImplemented;VirtualTimeSchedulerPrototype.toRelative = notImplemented;VirtualTimeSchedulerPrototype.schedulePeriodicWithState = function(state, period, action){var s=new SchedulePeriodicRecursive(this, state, period, action);return s.start();};VirtualTimeSchedulerPrototype.scheduleRelativeWithState = function(state, dueTime, action){var runAt=this.add(this.clock, dueTime);return this.scheduleAbsoluteWithState(state, runAt, action);};VirtualTimeSchedulerPrototype.scheduleRelative = function(dueTime, action){return this.scheduleRelativeWithState(action, dueTime, invokeAction);};VirtualTimeSchedulerPrototype.start = function(){if(!this.isEnabled){this.isEnabled = true;do {var next=this.getNext();if(next !== null){this.comparer(next.dueTime, this.clock) > 0 && (this.clock = next.dueTime);next.invoke();}else {this.isEnabled = false;}}while(this.isEnabled);}};VirtualTimeSchedulerPrototype.stop = function(){this.isEnabled = false;};VirtualTimeSchedulerPrototype.advanceTo = function(time){var dueToClock=this.comparer(this.clock, time);if(this.comparer(this.clock, time) > 0){throw new ArgumentOutOfRangeError();}if(dueToClock === 0){return;}if(!this.isEnabled){this.isEnabled = true;do {var next=this.getNext();if(next !== null && this.comparer(next.dueTime, time) <= 0){this.comparer(next.dueTime, this.clock) > 0 && (this.clock = next.dueTime);next.invoke();}else {this.isEnabled = false;}}while(this.isEnabled);this.clock = time;}};VirtualTimeSchedulerPrototype.advanceBy = function(time){var dt=this.add(this.clock, time), dueToClock=this.comparer(this.clock, dt);if(dueToClock > 0){throw new ArgumentOutOfRangeError();}if(dueToClock === 0){return;}this.advanceTo(dt);};VirtualTimeSchedulerPrototype.sleep = function(time){var dt=this.add(this.clock, time);if(this.comparer(this.clock, dt) >= 0){throw new ArgumentOutOfRangeError();}this.clock = dt;};VirtualTimeSchedulerPrototype.getNext = function(){while(this.queue.length > 0) {var next=this.queue.peek();if(next.isCancelled()){this.queue.dequeue();}else {return next;}}return null;};VirtualTimeSchedulerPrototype.scheduleAbsolute = function(dueTime, action){return this.scheduleAbsoluteWithState(action, dueTime, invokeAction);};VirtualTimeSchedulerPrototype.scheduleAbsoluteWithState = function(state, dueTime, action){var self=this;function run(scheduler, state1){self.queue.remove(si);return action(scheduler, state1);}var si=new ScheduledItem(this, state, run, dueTime, this.comparer);this.queue.enqueue(si);return si.disposable;};return VirtualTimeScheduler;})(Scheduler);Rx.HistoricalScheduler = (function(__super__){inherits(HistoricalScheduler, __super__);function HistoricalScheduler(initialClock, comparer){var clock=initialClock == null?0:initialClock;var cmp=comparer || defaultSubComparer;__super__.call(this, clock, cmp);}var HistoricalSchedulerProto=HistoricalScheduler.prototype;HistoricalSchedulerProto.add = function(absolute, relative){return absolute + relative;};HistoricalSchedulerProto.toDateTimeOffset = function(absolute){return new Date(absolute).getTime();};HistoricalSchedulerProto.toRelative = function(timeSpan){return timeSpan;};return HistoricalScheduler;})(Rx.VirtualTimeScheduler);var AnonymousObservable=Rx.AnonymousObservable = (function(__super__){inherits(AnonymousObservable, __super__);function fixSubscriber(subscriber){return subscriber && isFunction(subscriber.dispose)?subscriber:isFunction(subscriber)?disposableCreate(subscriber):disposableEmpty;}function setDisposable(s, state){var ado=state[0], subscribe=state[1];var sub=tryCatch(subscribe)(ado);if(sub === errorObj){if(!ado.fail(errorObj.e)){return thrower(errorObj.e);}}ado.setDisposable(fixSubscriber(sub));}function AnonymousObservable(subscribe, parent){this.source = parent;function s(observer){var ado=new AutoDetachObserver(observer), state=[ado, subscribe];if(currentThreadScheduler.scheduleRequired()){currentThreadScheduler.scheduleWithState(state, setDisposable);}else {setDisposable(null, state);}return ado;}__super__.call(this, s);}return AnonymousObservable;})(Observable);var AutoDetachObserver=(function(__super__){inherits(AutoDetachObserver, __super__);function AutoDetachObserver(observer){__super__.call(this);this.observer = observer;this.m = new SingleAssignmentDisposable();}var AutoDetachObserverPrototype=AutoDetachObserver.prototype;AutoDetachObserverPrototype.next = function(value){var result=tryCatch(this.observer.onNext).call(this.observer, value);if(result === errorObj){this.dispose();thrower(result.e);}};AutoDetachObserverPrototype.error = function(err){var result=tryCatch(this.observer.onError).call(this.observer, err);this.dispose();result === errorObj && thrower(result.e);};AutoDetachObserverPrototype.completed = function(){var result=tryCatch(this.observer.onCompleted).call(this.observer);this.dispose();result === errorObj && thrower(result.e);};AutoDetachObserverPrototype.setDisposable = function(value){this.m.setDisposable(value);};AutoDetachObserverPrototype.getDisposable = function(){return this.m.getDisposable();};AutoDetachObserverPrototype.dispose = function(){__super__.prototype.dispose.call(this);this.m.dispose();};return AutoDetachObserver;})(AbstractObserver);var GroupedObservable=(function(__super__){inherits(GroupedObservable, __super__);function subscribe(observer){return this.underlyingObservable.subscribe(observer);}function GroupedObservable(key, underlyingObservable, mergedDisposable){__super__.call(this, subscribe);this.key = key;this.underlyingObservable = !mergedDisposable?underlyingObservable:new AnonymousObservable(function(observer){return new CompositeDisposable(mergedDisposable.getDisposable(), underlyingObservable.subscribe(observer));});}return GroupedObservable;})(Observable);var Subject=Rx.Subject = (function(__super__){function subscribe(observer){checkDisposed(this);if(!this.isStopped){this.observers.push(observer);return new InnerSubscription(this, observer);}if(this.hasError){observer.onError(this.error);return disposableEmpty;}observer.onCompleted();return disposableEmpty;}inherits(Subject, __super__);function Subject(){__super__.call(this, subscribe);this.isDisposed = false, this.isStopped = false, this.observers = [];this.hasError = false;}addProperties(Subject.prototype, Observer.prototype, {hasObservers:function hasObservers(){return this.observers.length > 0;}, onCompleted:function onCompleted(){checkDisposed(this);if(!this.isStopped){this.isStopped = true;for(var i=0, os=cloneArray(this.observers), len=os.length; i < len; i++) {os[i].onCompleted();}this.observers.length = 0;}}, onError:function onError(error){checkDisposed(this);if(!this.isStopped){this.isStopped = true;this.error = error;this.hasError = true;for(var i=0, os=cloneArray(this.observers), len=os.length; i < len; i++) {os[i].onError(error);}this.observers.length = 0;}}, onNext:function onNext(value){checkDisposed(this);if(!this.isStopped){for(var i=0, os=cloneArray(this.observers), len=os.length; i < len; i++) {os[i].onNext(value);}}}, dispose:function dispose(){this.isDisposed = true;this.observers = null;}});Subject.create = function(observer, observable){return new AnonymousSubject(observer, observable);};return Subject;})(Observable);var AsyncSubject=Rx.AsyncSubject = (function(__super__){function subscribe(observer){checkDisposed(this);if(!this.isStopped){this.observers.push(observer);return new InnerSubscription(this, observer);}if(this.hasError){observer.onError(this.error);}else if(this.hasValue){observer.onNext(this.value);observer.onCompleted();}else {observer.onCompleted();}return disposableEmpty;}inherits(AsyncSubject, __super__);function AsyncSubject(){__super__.call(this, subscribe);this.isDisposed = false;this.isStopped = false;this.hasValue = false;this.observers = [];this.hasError = false;}addProperties(AsyncSubject.prototype, Observer, {hasObservers:function hasObservers(){checkDisposed(this);return this.observers.length > 0;}, onCompleted:function onCompleted(){var i, len;checkDisposed(this);if(!this.isStopped){this.isStopped = true;var os=cloneArray(this.observers), len=os.length;if(this.hasValue){for(i = 0; i < len; i++) {var o=os[i];o.onNext(this.value);o.onCompleted();}}else {for(i = 0; i < len; i++) {os[i].onCompleted();}}this.observers.length = 0;}}, onError:function onError(error){checkDisposed(this);if(!this.isStopped){this.isStopped = true;this.hasError = true;this.error = error;for(var i=0, os=cloneArray(this.observers), len=os.length; i < len; i++) {os[i].onError(error);}this.observers.length = 0;}}, onNext:function onNext(value){checkDisposed(this);if(this.isStopped){return;}this.value = value;this.hasValue = true;}, dispose:function dispose(){this.isDisposed = true;this.observers = null;this.exception = null;this.value = null;}});return AsyncSubject;})(Observable);var AnonymousSubject=Rx.AnonymousSubject = (function(__super__){inherits(AnonymousSubject, __super__);function subscribe(observer){return this.observable.subscribe(observer);}function AnonymousSubject(observer, observable){this.observer = observer;this.observable = observable;__super__.call(this, subscribe);}addProperties(AnonymousSubject.prototype, Observer.prototype, {onCompleted:function onCompleted(){this.observer.onCompleted();}, onError:function onError(error){this.observer.onError(error);}, onNext:function onNext(value){this.observer.onNext(value);}});return AnonymousSubject;})(Observable);Rx.Pauser = (function(__super__){inherits(Pauser, __super__);function Pauser(){__super__.call(this);}Pauser.prototype.pause = function(){this.onNext(false);};Pauser.prototype.resume = function(){this.onNext(true);};return Pauser;})(Subject);if(typeof define == 'function' && typeof define.amd == 'object' && define.amd){root.Rx = Rx;define(function(){return Rx;});}else if(freeExports && freeModule){if(moduleExports){(freeModule.exports = Rx).Rx = Rx;}else {freeExports.Rx = Rx;}}else {root.Rx = Rx;}var rEndingLine=captureLine();}).call(undefined);
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":2}],64:[function(require,module,exports){
+},{"_process":2}],10:[function(require,module,exports){
 'use strict';
 
 var escape = require('escape-html');
@@ -2264,7 +1090,7 @@ function memoizeString(callback) {
   };
 }
 
-},{"./property-config":74,"escape-html":66}],65:[function(require,module,exports){
+},{"./property-config":20,"escape-html":12}],11:[function(require,module,exports){
 'use strict';
 
 var escape = require('escape-html');
@@ -2353,7 +1179,7 @@ function closeTag(node) {
   return voidElements[tag] ? '' : '</' + tag + '>';
 }
 
-},{"./create-attribute":64,"./void-elements":75,"escape-html":66,"param-case":72,"virtual-dom/virtual-hyperscript/hooks/attribute-hook":94,"virtual-dom/virtual-hyperscript/hooks/soft-set-hook":96,"virtual-dom/vnode/is-thunk":100,"virtual-dom/vnode/is-vnode":102,"virtual-dom/vnode/is-vtext":103,"xtend":73}],66:[function(require,module,exports){
+},{"./create-attribute":10,"./void-elements":21,"escape-html":12,"param-case":18,"virtual-dom/virtual-hyperscript/hooks/attribute-hook":40,"virtual-dom/virtual-hyperscript/hooks/soft-set-hook":42,"virtual-dom/vnode/is-thunk":46,"virtual-dom/vnode/is-vnode":48,"virtual-dom/vnode/is-vtext":49,"xtend":19}],12:[function(require,module,exports){
 /**
  * Escape special characters in the given string of html.
  *
@@ -2368,7 +1194,7 @@ module.exports = function (html) {
   return String(html).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 };
 
-},{}],67:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 /**
  * Special language-specific overrides.
  *
@@ -2428,7 +1254,7 @@ module.exports = function (str, locale) {
   return str.toLowerCase();
 };
 
-},{}],68:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 'use strict';
 
 var lowerCase = require('lower-case');
@@ -2472,22 +1298,22 @@ module.exports = function (str, locale, replacement) {
   return lowerCase(str, locale);
 };
 
-},{"./vendor/camel-case-regexp":69,"./vendor/non-word-regexp":70,"./vendor/trailing-digit-regexp":71,"lower-case":67}],69:[function(require,module,exports){
+},{"./vendor/camel-case-regexp":15,"./vendor/non-word-regexp":16,"./vendor/trailing-digit-regexp":17,"lower-case":13}],15:[function(require,module,exports){
 "use strict";
 
 module.exports = /([\u0061-\u007A\u00B5\u00DF-\u00F6\u00F8-\u00FF\u0101\u0103\u0105\u0107\u0109\u010B\u010D\u010F\u0111\u0113\u0115\u0117\u0119\u011B\u011D\u011F\u0121\u0123\u0125\u0127\u0129\u012B\u012D\u012F\u0131\u0133\u0135\u0137\u0138\u013A\u013C\u013E\u0140\u0142\u0144\u0146\u0148\u0149\u014B\u014D\u014F\u0151\u0153\u0155\u0157\u0159\u015B\u015D\u015F\u0161\u0163\u0165\u0167\u0169\u016B\u016D\u016F\u0171\u0173\u0175\u0177\u017A\u017C\u017E-\u0180\u0183\u0185\u0188\u018C\u018D\u0192\u0195\u0199-\u019B\u019E\u01A1\u01A3\u01A5\u01A8\u01AA\u01AB\u01AD\u01B0\u01B4\u01B6\u01B9\u01BA\u01BD-\u01BF\u01C6\u01C9\u01CC\u01CE\u01D0\u01D2\u01D4\u01D6\u01D8\u01DA\u01DC\u01DD\u01DF\u01E1\u01E3\u01E5\u01E7\u01E9\u01EB\u01ED\u01EF\u01F0\u01F3\u01F5\u01F9\u01FB\u01FD\u01FF\u0201\u0203\u0205\u0207\u0209\u020B\u020D\u020F\u0211\u0213\u0215\u0217\u0219\u021B\u021D\u021F\u0221\u0223\u0225\u0227\u0229\u022B\u022D\u022F\u0231\u0233-\u0239\u023C\u023F\u0240\u0242\u0247\u0249\u024B\u024D\u024F-\u0293\u0295-\u02AF\u0371\u0373\u0377\u037B-\u037D\u0390\u03AC-\u03CE\u03D0\u03D1\u03D5-\u03D7\u03D9\u03DB\u03DD\u03DF\u03E1\u03E3\u03E5\u03E7\u03E9\u03EB\u03ED\u03EF-\u03F3\u03F5\u03F8\u03FB\u03FC\u0430-\u045F\u0461\u0463\u0465\u0467\u0469\u046B\u046D\u046F\u0471\u0473\u0475\u0477\u0479\u047B\u047D\u047F\u0481\u048B\u048D\u048F\u0491\u0493\u0495\u0497\u0499\u049B\u049D\u049F\u04A1\u04A3\u04A5\u04A7\u04A9\u04AB\u04AD\u04AF\u04B1\u04B3\u04B5\u04B7\u04B9\u04BB\u04BD\u04BF\u04C2\u04C4\u04C6\u04C8\u04CA\u04CC\u04CE\u04CF\u04D1\u04D3\u04D5\u04D7\u04D9\u04DB\u04DD\u04DF\u04E1\u04E3\u04E5\u04E7\u04E9\u04EB\u04ED\u04EF\u04F1\u04F3\u04F5\u04F7\u04F9\u04FB\u04FD\u04FF\u0501\u0503\u0505\u0507\u0509\u050B\u050D\u050F\u0511\u0513\u0515\u0517\u0519\u051B\u051D\u051F\u0521\u0523\u0525\u0527\u0561-\u0587\u1D00-\u1D2B\u1D6B-\u1D77\u1D79-\u1D9A\u1E01\u1E03\u1E05\u1E07\u1E09\u1E0B\u1E0D\u1E0F\u1E11\u1E13\u1E15\u1E17\u1E19\u1E1B\u1E1D\u1E1F\u1E21\u1E23\u1E25\u1E27\u1E29\u1E2B\u1E2D\u1E2F\u1E31\u1E33\u1E35\u1E37\u1E39\u1E3B\u1E3D\u1E3F\u1E41\u1E43\u1E45\u1E47\u1E49\u1E4B\u1E4D\u1E4F\u1E51\u1E53\u1E55\u1E57\u1E59\u1E5B\u1E5D\u1E5F\u1E61\u1E63\u1E65\u1E67\u1E69\u1E6B\u1E6D\u1E6F\u1E71\u1E73\u1E75\u1E77\u1E79\u1E7B\u1E7D\u1E7F\u1E81\u1E83\u1E85\u1E87\u1E89\u1E8B\u1E8D\u1E8F\u1E91\u1E93\u1E95-\u1E9D\u1E9F\u1EA1\u1EA3\u1EA5\u1EA7\u1EA9\u1EAB\u1EAD\u1EAF\u1EB1\u1EB3\u1EB5\u1EB7\u1EB9\u1EBB\u1EBD\u1EBF\u1EC1\u1EC3\u1EC5\u1EC7\u1EC9\u1ECB\u1ECD\u1ECF\u1ED1\u1ED3\u1ED5\u1ED7\u1ED9\u1EDB\u1EDD\u1EDF\u1EE1\u1EE3\u1EE5\u1EE7\u1EE9\u1EEB\u1EED\u1EEF\u1EF1\u1EF3\u1EF5\u1EF7\u1EF9\u1EFB\u1EFD\u1EFF-\u1F07\u1F10-\u1F15\u1F20-\u1F27\u1F30-\u1F37\u1F40-\u1F45\u1F50-\u1F57\u1F60-\u1F67\u1F70-\u1F7D\u1F80-\u1F87\u1F90-\u1F97\u1FA0-\u1FA7\u1FB0-\u1FB4\u1FB6\u1FB7\u1FBE\u1FC2-\u1FC4\u1FC6\u1FC7\u1FD0-\u1FD3\u1FD6\u1FD7\u1FE0-\u1FE7\u1FF2-\u1FF4\u1FF6\u1FF7\u210A\u210E\u210F\u2113\u212F\u2134\u2139\u213C\u213D\u2146-\u2149\u214E\u2184\u2C30-\u2C5E\u2C61\u2C65\u2C66\u2C68\u2C6A\u2C6C\u2C71\u2C73\u2C74\u2C76-\u2C7B\u2C81\u2C83\u2C85\u2C87\u2C89\u2C8B\u2C8D\u2C8F\u2C91\u2C93\u2C95\u2C97\u2C99\u2C9B\u2C9D\u2C9F\u2CA1\u2CA3\u2CA5\u2CA7\u2CA9\u2CAB\u2CAD\u2CAF\u2CB1\u2CB3\u2CB5\u2CB7\u2CB9\u2CBB\u2CBD\u2CBF\u2CC1\u2CC3\u2CC5\u2CC7\u2CC9\u2CCB\u2CCD\u2CCF\u2CD1\u2CD3\u2CD5\u2CD7\u2CD9\u2CDB\u2CDD\u2CDF\u2CE1\u2CE3\u2CE4\u2CEC\u2CEE\u2CF3\u2D00-\u2D25\u2D27\u2D2D\uA641\uA643\uA645\uA647\uA649\uA64B\uA64D\uA64F\uA651\uA653\uA655\uA657\uA659\uA65B\uA65D\uA65F\uA661\uA663\uA665\uA667\uA669\uA66B\uA66D\uA681\uA683\uA685\uA687\uA689\uA68B\uA68D\uA68F\uA691\uA693\uA695\uA697\uA723\uA725\uA727\uA729\uA72B\uA72D\uA72F-\uA731\uA733\uA735\uA737\uA739\uA73B\uA73D\uA73F\uA741\uA743\uA745\uA747\uA749\uA74B\uA74D\uA74F\uA751\uA753\uA755\uA757\uA759\uA75B\uA75D\uA75F\uA761\uA763\uA765\uA767\uA769\uA76B\uA76D\uA76F\uA771-\uA778\uA77A\uA77C\uA77F\uA781\uA783\uA785\uA787\uA78C\uA78E\uA791\uA793\uA7A1\uA7A3\uA7A5\uA7A7\uA7A9\uA7FA\uFB00-\uFB06\uFB13-\uFB17\uFF41-\uFF5A])([\u0041-\u005A\u00C0-\u00D6\u00D8-\u00DE\u0100\u0102\u0104\u0106\u0108\u010A\u010C\u010E\u0110\u0112\u0114\u0116\u0118\u011A\u011C\u011E\u0120\u0122\u0124\u0126\u0128\u012A\u012C\u012E\u0130\u0132\u0134\u0136\u0139\u013B\u013D\u013F\u0141\u0143\u0145\u0147\u014A\u014C\u014E\u0150\u0152\u0154\u0156\u0158\u015A\u015C\u015E\u0160\u0162\u0164\u0166\u0168\u016A\u016C\u016E\u0170\u0172\u0174\u0176\u0178\u0179\u017B\u017D\u0181\u0182\u0184\u0186\u0187\u0189-\u018B\u018E-\u0191\u0193\u0194\u0196-\u0198\u019C\u019D\u019F\u01A0\u01A2\u01A4\u01A6\u01A7\u01A9\u01AC\u01AE\u01AF\u01B1-\u01B3\u01B5\u01B7\u01B8\u01BC\u01C4\u01C7\u01CA\u01CD\u01CF\u01D1\u01D3\u01D5\u01D7\u01D9\u01DB\u01DE\u01E0\u01E2\u01E4\u01E6\u01E8\u01EA\u01EC\u01EE\u01F1\u01F4\u01F6-\u01F8\u01FA\u01FC\u01FE\u0200\u0202\u0204\u0206\u0208\u020A\u020C\u020E\u0210\u0212\u0214\u0216\u0218\u021A\u021C\u021E\u0220\u0222\u0224\u0226\u0228\u022A\u022C\u022E\u0230\u0232\u023A\u023B\u023D\u023E\u0241\u0243-\u0246\u0248\u024A\u024C\u024E\u0370\u0372\u0376\u0386\u0388-\u038A\u038C\u038E\u038F\u0391-\u03A1\u03A3-\u03AB\u03CF\u03D2-\u03D4\u03D8\u03DA\u03DC\u03DE\u03E0\u03E2\u03E4\u03E6\u03E8\u03EA\u03EC\u03EE\u03F4\u03F7\u03F9\u03FA\u03FD-\u042F\u0460\u0462\u0464\u0466\u0468\u046A\u046C\u046E\u0470\u0472\u0474\u0476\u0478\u047A\u047C\u047E\u0480\u048A\u048C\u048E\u0490\u0492\u0494\u0496\u0498\u049A\u049C\u049E\u04A0\u04A2\u04A4\u04A6\u04A8\u04AA\u04AC\u04AE\u04B0\u04B2\u04B4\u04B6\u04B8\u04BA\u04BC\u04BE\u04C0\u04C1\u04C3\u04C5\u04C7\u04C9\u04CB\u04CD\u04D0\u04D2\u04D4\u04D6\u04D8\u04DA\u04DC\u04DE\u04E0\u04E2\u04E4\u04E6\u04E8\u04EA\u04EC\u04EE\u04F0\u04F2\u04F4\u04F6\u04F8\u04FA\u04FC\u04FE\u0500\u0502\u0504\u0506\u0508\u050A\u050C\u050E\u0510\u0512\u0514\u0516\u0518\u051A\u051C\u051E\u0520\u0522\u0524\u0526\u0531-\u0556\u10A0-\u10C5\u10C7\u10CD\u1E00\u1E02\u1E04\u1E06\u1E08\u1E0A\u1E0C\u1E0E\u1E10\u1E12\u1E14\u1E16\u1E18\u1E1A\u1E1C\u1E1E\u1E20\u1E22\u1E24\u1E26\u1E28\u1E2A\u1E2C\u1E2E\u1E30\u1E32\u1E34\u1E36\u1E38\u1E3A\u1E3C\u1E3E\u1E40\u1E42\u1E44\u1E46\u1E48\u1E4A\u1E4C\u1E4E\u1E50\u1E52\u1E54\u1E56\u1E58\u1E5A\u1E5C\u1E5E\u1E60\u1E62\u1E64\u1E66\u1E68\u1E6A\u1E6C\u1E6E\u1E70\u1E72\u1E74\u1E76\u1E78\u1E7A\u1E7C\u1E7E\u1E80\u1E82\u1E84\u1E86\u1E88\u1E8A\u1E8C\u1E8E\u1E90\u1E92\u1E94\u1E9E\u1EA0\u1EA2\u1EA4\u1EA6\u1EA8\u1EAA\u1EAC\u1EAE\u1EB0\u1EB2\u1EB4\u1EB6\u1EB8\u1EBA\u1EBC\u1EBE\u1EC0\u1EC2\u1EC4\u1EC6\u1EC8\u1ECA\u1ECC\u1ECE\u1ED0\u1ED2\u1ED4\u1ED6\u1ED8\u1EDA\u1EDC\u1EDE\u1EE0\u1EE2\u1EE4\u1EE6\u1EE8\u1EEA\u1EEC\u1EEE\u1EF0\u1EF2\u1EF4\u1EF6\u1EF8\u1EFA\u1EFC\u1EFE\u1F08-\u1F0F\u1F18-\u1F1D\u1F28-\u1F2F\u1F38-\u1F3F\u1F48-\u1F4D\u1F59\u1F5B\u1F5D\u1F5F\u1F68-\u1F6F\u1FB8-\u1FBB\u1FC8-\u1FCB\u1FD8-\u1FDB\u1FE8-\u1FEC\u1FF8-\u1FFB\u2102\u2107\u210B-\u210D\u2110-\u2112\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u2130-\u2133\u213E\u213F\u2145\u2183\u2C00-\u2C2E\u2C60\u2C62-\u2C64\u2C67\u2C69\u2C6B\u2C6D-\u2C70\u2C72\u2C75\u2C7E-\u2C80\u2C82\u2C84\u2C86\u2C88\u2C8A\u2C8C\u2C8E\u2C90\u2C92\u2C94\u2C96\u2C98\u2C9A\u2C9C\u2C9E\u2CA0\u2CA2\u2CA4\u2CA6\u2CA8\u2CAA\u2CAC\u2CAE\u2CB0\u2CB2\u2CB4\u2CB6\u2CB8\u2CBA\u2CBC\u2CBE\u2CC0\u2CC2\u2CC4\u2CC6\u2CC8\u2CCA\u2CCC\u2CCE\u2CD0\u2CD2\u2CD4\u2CD6\u2CD8\u2CDA\u2CDC\u2CDE\u2CE0\u2CE2\u2CEB\u2CED\u2CF2\uA640\uA642\uA644\uA646\uA648\uA64A\uA64C\uA64E\uA650\uA652\uA654\uA656\uA658\uA65A\uA65C\uA65E\uA660\uA662\uA664\uA666\uA668\uA66A\uA66C\uA680\uA682\uA684\uA686\uA688\uA68A\uA68C\uA68E\uA690\uA692\uA694\uA696\uA722\uA724\uA726\uA728\uA72A\uA72C\uA72E\uA732\uA734\uA736\uA738\uA73A\uA73C\uA73E\uA740\uA742\uA744\uA746\uA748\uA74A\uA74C\uA74E\uA750\uA752\uA754\uA756\uA758\uA75A\uA75C\uA75E\uA760\uA762\uA764\uA766\uA768\uA76A\uA76C\uA76E\uA779\uA77B\uA77D\uA77E\uA780\uA782\uA784\uA786\uA78B\uA78D\uA790\uA792\uA7A0\uA7A2\uA7A4\uA7A6\uA7A8\uA7AA\uFF21-\uFF3A\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])/g;
 
-},{}],70:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 
 module.exports = /[^\u0041-\u005A\u0061-\u007A\u00AA\u00B5\u00BA\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0370-\u0374\u0376\u0377\u037A-\u037D\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u048A-\u0527\u0531-\u0556\u0559\u0561-\u0587\u05D0-\u05EA\u05F0-\u05F2\u0620-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07CA-\u07EA\u07F4\u07F5\u07FA\u0800-\u0815\u081A\u0824\u0828\u0840-\u0858\u08A0\u08A2-\u08AC\u0904-\u0939\u093D\u0950\u0958-\u0961\u0971-\u0977\u0979-\u097F\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD\u09CE\u09DC\u09DD\u09DF-\u09E1\u09F0\u09F1\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A59-\u0A5C\u0A5E\u0A72-\u0A74\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD\u0AD0\u0AE0\u0AE1\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B5C\u0B5D\u0B5F-\u0B61\u0B71\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BD0\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C33\u0C35-\u0C39\u0C3D\u0C58\u0C59\u0C60\u0C61\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD\u0CDE\u0CE0\u0CE1\u0CF1\u0CF2\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D\u0D4E\u0D60\u0D61\u0D7A-\u0D7F\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0EDC-\u0EDF\u0F00\u0F40-\u0F47\u0F49-\u0F6C\u0F88-\u0F8C\u1000-\u102A\u103F\u1050-\u1055\u105A-\u105D\u1061\u1065\u1066\u106E-\u1070\u1075-\u1081\u108E\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1380-\u138F\u13A0-\u13F4\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u1700-\u170C\u170E-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17D7\u17DC\u1820-\u1877\u1880-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191C\u1950-\u196D\u1970-\u1974\u1980-\u19AB\u19C1-\u19C7\u1A00-\u1A16\u1A20-\u1A54\u1AA7\u1B05-\u1B33\u1B45-\u1B4B\u1B83-\u1BA0\u1BAE\u1BAF\u1BBA-\u1BE5\u1C00-\u1C23\u1C4D-\u1C4F\u1C5A-\u1C7D\u1CE9-\u1CEC\u1CEE-\u1CF1\u1CF5\u1CF6\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2183\u2184\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2E2F\u3005\u3006\u3031-\u3035\u303B\u303C\u3041-\u3096\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312D\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FCC\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA61F\uA62A\uA62B\uA640-\uA66E\uA67F-\uA697\uA6A0-\uA6E5\uA717-\uA71F\uA722-\uA788\uA78B-\uA78E\uA790-\uA793\uA7A0-\uA7AA\uA7F8-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA822\uA840-\uA873\uA882-\uA8B3\uA8F2-\uA8F7\uA8FB\uA90A-\uA925\uA930-\uA946\uA960-\uA97C\uA984-\uA9B2\uA9CF\uAA00-\uAA28\uAA40-\uAA42\uAA44-\uAA4B\uAA60-\uAA76\uAA7A\uAA80-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAADD\uAAE0-\uAAEA\uAAF2-\uAAF4\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uABC0-\uABE2\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19]+/g;
 
-},{}],71:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 "use strict";
 
 module.exports = /([\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])([^\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])/g;
 
-},{}],72:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 'use strict';
 
 var sentenceCase = require('sentence-case');
@@ -2503,7 +1329,7 @@ module.exports = function (string, locale) {
   return sentenceCase(string, locale, '-');
 };
 
-},{"sentence-case":68}],73:[function(require,module,exports){
+},{"sentence-case":14}],19:[function(require,module,exports){
 "use strict";
 
 module.exports = extend;
@@ -2524,7 +1350,7 @@ function extend() {
     return target;
 }
 
-},{}],74:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /**
  * Attribute types.
  */
@@ -2689,7 +1515,7 @@ module.exports = {
   attributeNames: attributeNames
 };
 
-},{}],75:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 
 /**
  * Void elements.
@@ -2717,28 +1543,28 @@ module.exports = {
   'wbr': true
 };
 
-},{}],76:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
 
 var createElement = require("./vdom/create-element.js");
 
 module.exports = createElement;
 
-},{"./vdom/create-element.js":89}],77:[function(require,module,exports){
+},{"./vdom/create-element.js":35}],23:[function(require,module,exports){
 "use strict";
 
 var diff = require("./vtree/diff.js");
 
 module.exports = diff;
 
-},{"./vtree/diff.js":110}],78:[function(require,module,exports){
+},{"./vtree/diff.js":56}],24:[function(require,module,exports){
 "use strict";
 
 var h = require("./virtual-hyperscript/index.js");
 
 module.exports = h;
 
-},{"./virtual-hyperscript/index.js":97}],79:[function(require,module,exports){
+},{"./virtual-hyperscript/index.js":43}],25:[function(require,module,exports){
 "use strict";
 
 var diff = require("./diff.js");
@@ -2757,7 +1583,7 @@ module.exports = {
     VText: VText
 };
 
-},{"./create-element.js":76,"./diff.js":77,"./h.js":78,"./patch.js":87,"./vnode/vnode.js":106,"./vnode/vtext.js":108}],80:[function(require,module,exports){
+},{"./create-element.js":22,"./diff.js":23,"./h.js":24,"./patch.js":33,"./vnode/vnode.js":52,"./vnode/vtext.js":54}],26:[function(require,module,exports){
 /*!
  * Cross-Browser Split 1.1.1
  * Copyright 2007-2012 Steven Levithan <stevenlevithan.com>
@@ -2873,7 +1699,7 @@ module.exports = (function split(undef) {
 })();
 // Proposed for ES6
 
-},{}],81:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 'use strict';
 
 var OneVersionConstraint = require('individual/one-version');
@@ -2895,7 +1721,7 @@ function EvStore(elem) {
     return hash;
 }
 
-},{"individual/one-version":83}],82:[function(require,module,exports){
+},{"individual/one-version":29}],28:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -2916,7 +1742,7 @@ function Individual(key, value) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],83:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 'use strict';
 
 var Individual = require('./index.js');
@@ -2936,7 +1762,7 @@ function OneVersion(moduleName, version, defaultValue) {
     return Individual(key, defaultValue);
 }
 
-},{"./index.js":82}],84:[function(require,module,exports){
+},{"./index.js":28}],30:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -2956,14 +1782,14 @@ if (typeof document !== 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":1}],85:[function(require,module,exports){
+},{"min-document":1}],31:[function(require,module,exports){
 "use strict";
 
 module.exports = function isObject(x) {
 	return typeof x === "object" && x !== null;
 };
 
-},{}],86:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 
 var nativeIsArray = Array.isArray;
@@ -2975,14 +1801,14 @@ function isArray(obj) {
     return toString.call(obj) === "[object Array]";
 }
 
-},{}],87:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
 
 var patch = require("./vdom/patch.js");
 
 module.exports = patch;
 
-},{"./vdom/patch.js":92}],88:[function(require,module,exports){
+},{"./vdom/patch.js":38}],34:[function(require,module,exports){
 "use strict";
 
 var isObject = require("is-object");
@@ -3080,7 +1906,7 @@ function getPrototype(value) {
     }
 }
 
-},{"../vnode/is-vhook.js":101,"is-object":85}],89:[function(require,module,exports){
+},{"../vnode/is-vhook.js":47,"is-object":31}],35:[function(require,module,exports){
 "use strict";
 
 var document = require("global/document");
@@ -3128,7 +1954,7 @@ function createElement(vnode, opts) {
     return node;
 }
 
-},{"../vnode/handle-thunk.js":99,"../vnode/is-vnode.js":102,"../vnode/is-vtext.js":103,"../vnode/is-widget.js":104,"./apply-properties":88,"global/document":84}],90:[function(require,module,exports){
+},{"../vnode/handle-thunk.js":45,"../vnode/is-vnode.js":48,"../vnode/is-vtext.js":49,"../vnode/is-widget.js":50,"./apply-properties":34,"global/document":30}],36:[function(require,module,exports){
 // Maps a virtual DOM tree onto a real DOM tree in an efficient manner.
 // We don't want to read all of the DOM nodes in the tree so we use
 // the in-order tree indexing to eliminate recursion down certain branches.
@@ -3216,7 +2042,7 @@ function ascending(a, b) {
     return a > b ? 1 : -1;
 }
 
-},{}],91:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 "use strict";
 
 var applyProperties = require("./apply-properties");
@@ -3371,7 +2197,7 @@ function replaceRoot(oldRoot, newRoot) {
     return newRoot;
 }
 
-},{"../vnode/is-widget.js":104,"../vnode/vpatch.js":107,"./apply-properties":88,"./create-element":89,"./update-widget":93}],92:[function(require,module,exports){
+},{"../vnode/is-widget.js":50,"../vnode/vpatch.js":53,"./apply-properties":34,"./create-element":35,"./update-widget":39}],38:[function(require,module,exports){
 "use strict";
 
 var document = require("global/document");
@@ -3448,7 +2274,7 @@ function patchIndices(patches) {
     return indices;
 }
 
-},{"./dom-index":90,"./patch-op":91,"global/document":84,"x-is-array":86}],93:[function(require,module,exports){
+},{"./dom-index":36,"./patch-op":37,"global/document":30,"x-is-array":32}],39:[function(require,module,exports){
 "use strict";
 
 var isWidget = require("../vnode/is-widget.js");
@@ -3467,7 +2293,7 @@ function updateWidget(a, b) {
     return false;
 }
 
-},{"../vnode/is-widget.js":104}],94:[function(require,module,exports){
+},{"../vnode/is-widget.js":50}],40:[function(require,module,exports){
 'use strict';
 
 module.exports = AttributeHook;
@@ -3501,7 +2327,7 @@ AttributeHook.prototype.unhook = function (node, prop, next) {
 
 AttributeHook.prototype.type = 'AttributeHook';
 
-},{}],95:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 'use strict';
 
 var EvStore = require('ev-store');
@@ -3530,7 +2356,7 @@ EvHook.prototype.unhook = function (node, propertyName) {
     es[propName] = undefined;
 };
 
-},{"ev-store":81}],96:[function(require,module,exports){
+},{"ev-store":27}],42:[function(require,module,exports){
 'use strict';
 
 module.exports = SoftSetHook;
@@ -3549,7 +2375,7 @@ SoftSetHook.prototype.hook = function (node, propertyName) {
     }
 };
 
-},{}],97:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 'use strict';
 
 var isArray = require('x-is-array');
@@ -3673,7 +2499,7 @@ function errorString(obj) {
     }
 }
 
-},{"../vnode/is-thunk":100,"../vnode/is-vhook":101,"../vnode/is-vnode":102,"../vnode/is-vtext":103,"../vnode/is-widget":104,"../vnode/vnode.js":106,"../vnode/vtext.js":108,"./hooks/ev-hook.js":95,"./hooks/soft-set-hook.js":96,"./parse-tag.js":98,"x-is-array":86}],98:[function(require,module,exports){
+},{"../vnode/is-thunk":46,"../vnode/is-vhook":47,"../vnode/is-vnode":48,"../vnode/is-vtext":49,"../vnode/is-widget":50,"../vnode/vnode.js":52,"../vnode/vtext.js":54,"./hooks/ev-hook.js":41,"./hooks/soft-set-hook.js":42,"./parse-tag.js":44,"x-is-array":32}],44:[function(require,module,exports){
 'use strict';
 
 var split = require('browser-split');
@@ -3729,7 +2555,7 @@ function parseTag(tag, props) {
     return props.namespace ? tagName : tagName.toUpperCase();
 }
 
-},{"browser-split":80}],99:[function(require,module,exports){
+},{"browser-split":26}],45:[function(require,module,exports){
 "use strict";
 
 var isVNode = require("./is-vnode");
@@ -3771,7 +2597,7 @@ function renderThunk(thunk, previous) {
     return renderedThunk;
 }
 
-},{"./is-thunk":100,"./is-vnode":102,"./is-vtext":103,"./is-widget":104}],100:[function(require,module,exports){
+},{"./is-thunk":46,"./is-vnode":48,"./is-vtext":49,"./is-widget":50}],46:[function(require,module,exports){
 "use strict";
 
 module.exports = isThunk;
@@ -3780,7 +2606,7 @@ function isThunk(t) {
     return t && t.type === "Thunk";
 }
 
-},{}],101:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 "use strict";
 
 module.exports = isHook;
@@ -3789,7 +2615,7 @@ function isHook(hook) {
   return hook && (typeof hook.hook === "function" && !hook.hasOwnProperty("hook") || typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"));
 }
 
-},{}],102:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 "use strict";
 
 var version = require("./version");
@@ -3800,7 +2626,7 @@ function isVirtualNode(x) {
     return x && x.type === "VirtualNode" && x.version === version;
 }
 
-},{"./version":105}],103:[function(require,module,exports){
+},{"./version":51}],49:[function(require,module,exports){
 "use strict";
 
 var version = require("./version");
@@ -3811,7 +2637,7 @@ function isVirtualText(x) {
     return x && x.type === "VirtualText" && x.version === version;
 }
 
-},{"./version":105}],104:[function(require,module,exports){
+},{"./version":51}],50:[function(require,module,exports){
 "use strict";
 
 module.exports = isWidget;
@@ -3820,12 +2646,12 @@ function isWidget(w) {
     return w && w.type === "Widget";
 }
 
-},{}],105:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 "use strict";
 
 module.exports = "2";
 
-},{}],106:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 "use strict";
 
 var version = require("./version");
@@ -3901,7 +2727,7 @@ function VirtualNode(tagName, properties, children, key, namespace) {
 VirtualNode.prototype.version = version;
 VirtualNode.prototype.type = "VirtualNode";
 
-},{"./is-thunk":100,"./is-vhook":101,"./is-vnode":102,"./is-widget":104,"./version":105}],107:[function(require,module,exports){
+},{"./is-thunk":46,"./is-vhook":47,"./is-vnode":48,"./is-widget":50,"./version":51}],53:[function(require,module,exports){
 "use strict";
 
 var version = require("./version");
@@ -3927,7 +2753,7 @@ function VirtualPatch(type, vNode, patch) {
 VirtualPatch.prototype.version = version;
 VirtualPatch.prototype.type = "VirtualPatch";
 
-},{"./version":105}],108:[function(require,module,exports){
+},{"./version":51}],54:[function(require,module,exports){
 "use strict";
 
 var version = require("./version");
@@ -3941,7 +2767,7 @@ function VirtualText(text) {
 VirtualText.prototype.version = version;
 VirtualText.prototype.type = "VirtualText";
 
-},{"./version":105}],109:[function(require,module,exports){
+},{"./version":51}],55:[function(require,module,exports){
 "use strict";
 
 var isObject = require("is-object");
@@ -4003,7 +2829,7 @@ function getPrototype(value) {
     }
 }
 
-},{"../vnode/is-vhook":101,"is-object":85}],110:[function(require,module,exports){
+},{"../vnode/is-vhook":47,"is-object":31}],56:[function(require,module,exports){
 "use strict";
 
 var isArray = require("x-is-array");
@@ -4410,7 +3236,7 @@ function appendPatch(apply, patch) {
 }
 // An array of unkeyed item indices
 
-},{"../vnode/handle-thunk":99,"../vnode/is-thunk":100,"../vnode/is-vnode":102,"../vnode/is-vtext":103,"../vnode/is-widget":104,"../vnode/vpatch":107,"./diff-props":109,"x-is-array":86}],111:[function(require,module,exports){
+},{"../vnode/handle-thunk":45,"../vnode/is-thunk":46,"../vnode/is-vnode":48,"../vnode/is-vtext":49,"../vnode/is-widget":50,"../vnode/vpatch":53,"./diff-props":55,"x-is-array":32}],57:[function(require,module,exports){
 'use strict';
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
@@ -4480,7 +3306,7 @@ _cyclejs2['default'].registerCustomElement('todo-item', function (interactions, 
   };
 });
 
-},{"../utils":116,"cyclejs":5}],112:[function(require,module,exports){
+},{"../utils":62,"cyclejs":5}],58:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -4536,7 +3362,7 @@ function intent(interactions) {
 ;
 module.exports = exports['default'];
 
-},{"../utils":116,"cyclejs":5}],113:[function(require,module,exports){
+},{"../utils":62,"cyclejs":5}],59:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -4675,7 +3501,7 @@ function model(intent, source) {
 exports['default'] = model;
 module.exports = exports['default'];
 
-},{"cyclejs":5}],114:[function(require,module,exports){
+},{"cyclejs":5}],60:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -4701,7 +3527,7 @@ function localStorageSink(todosData) {
 ;
 module.exports = exports['default'];
 
-},{}],115:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -4747,7 +3573,7 @@ exports['default'] = {
 };
 module.exports = exports['default'];
 
-},{"cyclejs":5}],116:[function(require,module,exports){
+},{"cyclejs":5}],62:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -4788,7 +3614,7 @@ exports.propHook = propHook;
 exports.ENTER_KEY = ENTER_KEY;
 exports.ESC_KEY = ESC_KEY;
 
-},{}],117:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -4866,7 +3692,7 @@ function view(todos$) {
 ;
 module.exports = exports['default'];
 
-},{"../utils":116,"cyclejs":5}],118:[function(require,module,exports){
+},{"../utils":62,"cyclejs":5}],64:[function(require,module,exports){
 'use strict';
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
@@ -4907,4 +3733,4 @@ function app(interactions) {
 
 _cyclejs2['default'].applyToDOM('#todoapp', app);
 
-},{"./components/todo-item":111,"./intents/todos":112,"./models/todos":113,"./sinks/local-storage.js":114,"./sources/todos":115,"./views/todos":117,"cyclejs":5}]},{},[118]);
+},{"./components/todo-item":57,"./intents/todos":58,"./models/todos":59,"./sinks/local-storage.js":60,"./sources/todos":61,"./views/todos":63,"cyclejs":5}]},{},[64]);
