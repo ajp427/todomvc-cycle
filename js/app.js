@@ -147,14 +147,9 @@ function subscribeDispatchersWhenRootChanges(metadata) {
 }
 
 function makePropertiesProxy() {
-  var propertiesProxy = {};
-  Object.defineProperty(propertiesProxy, 'type', {
-    enumerable: false,
-    value: 'PropertiesProxy'
-  });
-  Object.defineProperty(propertiesProxy, 'get', {
-    enumerable: false,
-    value: function get(streamKey) {
+  var propertiesProxy = {
+    type: 'PropertiesProxy',
+    get: function get(streamKey) {
       var comparer = arguments[1] === undefined ? Rx.helpers.defaultComparer : arguments[1];
 
       if (typeof this[streamKey] === 'undefined') {
@@ -162,7 +157,8 @@ function makePropertiesProxy() {
       }
       return this[streamKey].distinctUntilChanged(Rx.helpers.identity, comparer);
     }
-  });
+  };
+
   return propertiesProxy;
 }
 
