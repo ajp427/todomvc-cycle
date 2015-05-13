@@ -13535,7 +13535,7 @@ function determineFilter(todosData, route) {
 }
 
 function searchTodoIndex(todosList, todoid) {
-  todoList.find(function (todo) {
+  todosList.find(function (todo) {
     return todoid == todo.id;
   });
 }
