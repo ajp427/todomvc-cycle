@@ -21,7 +21,7 @@ let defaultTodosData = {
   filterFn: () => true // allow anything
 };
 
-let storedTodosData = JSON.parse(window['todos-cycle']) || {};
+let storedTodosData = window['todos-cycle'] || {};
 
 let initialTodosData = merge(defaultTodosData, storedTodosData);
 

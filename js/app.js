@@ -8381,7 +8381,7 @@ var defaultTodosData = {
     ;
   } };
 
-var storedTodosData = JSON.parse(window['todos-cycle']) || {};
+var storedTodosData = window['todos-cycle'] || {};
 
 var initialTodosData = merge(defaultTodosData, storedTodosData);
 
