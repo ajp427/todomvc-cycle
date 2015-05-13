@@ -6913,7 +6913,7 @@ module.exports = {
     var disposables = new CompositeDisposable();
 
     // Asume NodeList
-    if (Object.prototype.toString.call(el) === '[object NodeList]') {
+    if (Object.prototype.toString.call(el) === '[object NodeList]' || StaticNodeList && el instanceof StaticNodeList) {
       for (var i = 0, len = el.length; i < len; i++) {
         disposables.add(createEventListener(el.item(i), eventName, handler));
       }
