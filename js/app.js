@@ -8337,7 +8337,8 @@ function localStorageSink(todosData) {
       };
     })
   };
-  localStorage.setItem('todos-cycle', JSON.stringify(savedTodosData));
+  //localStorage.setItem('todos-cycle', JSON.stringify(savedTodosData))
+  window['todos-cycle'] = savedTodosData;
 }
 
 ;
@@ -8380,7 +8381,7 @@ var defaultTodosData = {
     ;
   } };
 
-var storedTodosData = JSON.parse(localStorage.getItem('todos-cycle')) || {};
+var storedTodosData = JSON.parse(window['todos-cycle']) || {};
 
 var initialTodosData = merge(defaultTodosData, storedTodosData);
 
