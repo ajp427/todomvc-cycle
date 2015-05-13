@@ -16,23 +16,9 @@ function determineFilter(todosData, route) {
 }
 
 function searchTodoIndex(todosList, todoid) {
-  let top = todosList.length;
-  let bottom = 0;
-  let pointerId;
-  let index;
-  let loop = true;
-  while (loop) { // binary search
-    index = bottom + ((top - bottom) >> 1);
-    pointerId = todosList[index].id;
-    if (pointerId === todoid) {
-      loop = false;
-      return index;
-    } else if (pointerId < todoid) {
-      bottom = index;
-    } else if (pointerId > todoid) {
-      top = index;
-    }
-  }
+  todoList.find(function (todo) {
+    return todoid == todo.id;
+  });
 }
 
 function makeModification$(intent) {

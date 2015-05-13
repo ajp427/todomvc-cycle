@@ -13535,24 +13535,9 @@ function determineFilter(todosData, route) {
 }
 
 function searchTodoIndex(todosList, todoid) {
-  var top = todosList.length;
-  var bottom = 0;
-  var pointerId = undefined;
-  var index = undefined;
-  var loop = true;
-  while (loop) {
-    // binary search
-    index = bottom + (top - bottom >> 1);
-    pointerId = todosList[index].id;
-    if (pointerId === todoid) {
-      loop = false;
-      return index;
-    } else if (pointerId < todoid) {
-      bottom = index;
-    } else if (pointerId > todoid) {
-      top = index;
-    }
-  }
+  todoList.find(function (todo) {
+    return todoid == todo.id;
+  });
 }
 
 function makeModification$(intent) {
@@ -13808,7 +13793,7 @@ function vrenderFooter(todosData) {
     return todoData.completed;
   }).length;
   var amountActive = todosData.list.length - amountCompleted;
-  return h('footer#footer', {
+  return h('div#footer', {
     style: { 'display': todosData.list.length ? '' : 'none' }
   }, [h('span#todo-count', [h('strong', String(amountActive)), ' item' + (amountActive !== 1 ? 's' : '') + ' left']), h('ul#filters', [h('li', [h('a' + (todosData.filter === '' ? '.selected' : ''), {
     attributes: { 'href': '#/' }
