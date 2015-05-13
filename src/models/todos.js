@@ -20,10 +20,12 @@ function searchTodoIndex(todosList, todoid) {
   let bottom = 0;
   let pointerId;
   let index;
-  while (true) { // binary search
+  let loop = true;
+  while (loop) { // binary search
     index = bottom + ((top - bottom) >> 1);
     pointerId = todosList[index].id;
     if (pointerId === todoid) {
+      loop = false;
       return index;
     } else if (pointerId < todoid) {
       bottom = index;

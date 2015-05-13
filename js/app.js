@@ -13539,11 +13539,13 @@ function searchTodoIndex(todosList, todoid) {
   var bottom = 0;
   var pointerId = undefined;
   var index = undefined;
-  while (true) {
+  var loop = true;
+  while (loop) {
     // binary search
     index = bottom + (top - bottom >> 1);
     pointerId = todosList[index].id;
     if (pointerId === todoid) {
+      loop = false;
       return index;
     } else if (pointerId < todoid) {
       bottom = index;
