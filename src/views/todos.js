@@ -46,7 +46,7 @@ function vrenderFooter(todosData) {
     .filter(todoData => todoData.completed)
     .length;
   let amountActive = todosData.list.length - amountCompleted;
-  return h('footer#footer', {
+  return h('div#footer', {
     style: {'display': todosData.list.length ? '' : 'none'}
   }, [
     h('span#todo-count', [
